@@ -22,8 +22,42 @@
 和任何其它现代的编程语言一样，JS对普通的算数运算和循环都有很容易理解的使用方法。JS语言本身的与众不同之处很大程度上在于它对数据的表达和处理。根据其在内存里的存储和管理方式，JS支持的数据类型可以分为两大类：基础数据类型（Primitive）和引用数据类型（Reference）。二者的区别对于我们理解对象有很关键的作用。
 ## 基础数据类型
 基础数据类型用于存储比较简单这几类数据：
-* Boolean：取值范围只有`true`和`false`
-* Number：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处Number的关系后面会提及。
+* Boolean：布尔值，取值范围只有`true`和`false`
+* Number：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处Number数据类型的关系后面会提及。
+* String：字符串，包括一个字符（JS没有'char'类型），支持Unicode
+* Null：“空”。此类型只有一个值就是`null`
+* Undefined：“未定义”。此类型只有一个值就是`undefined`，最常见的地方是你的代码定义了一个变量但是还没有赋值时，其值为`undefined`
+
+所有的基础数据类型都是一个具体的值存储于内存某处，而你定义的变量就直接指向这个值（而不是指向具体值的地址；这是和引用类型最大的区别）。而每一个变量也都指向自己的值，并不跟其它变量共享这个存储地址，即便其二者的值是一样的。比如，
+
+    // strings
+    var name = "Jack";
+    var answer = "a";
+
+    // numbers
+    var count = 25;
+    var result = -0;
+    var totalCost = 34.56;
+
+    // boolean
+    let default = true;
+
+    // null
+    var obj = null;
+
+    // undefined
+    let k = undefined;
+    let q;  // 自动被赋值为 undefined
+
+    // 每个变量都有自己的存贮地址
+    let val1 = 50;
+    let val2 = val1;  // val2 现在也将‘50’这个值存于自己的存储空间内
+    val1 = 25;
+    console.log(val2);  // 50；val2的值并不随着val1而改变
+
+### 识别基础数据类型
+由于JS在语法上定义一个变量的时候，并不需要声明变量类型，其后赋值时也不进行类型检查，所以有时候程序本身需要动态地检查其所持有的值的类型。为此JS提供了`typeof`操作符:
+
 
 # 3. 函数（Function）
 
