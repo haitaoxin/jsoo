@@ -58,6 +58,60 @@
 ### 识别基础数据类型
 由于JS在语法上定义一个变量的时候，并不需要声明变量类型，其后赋值时也不进行类型检查，所以有时候程序本身需要动态地检查其所持有的值的类型。为此JS提供了`typeof`操作符:
 
+    // 继续上面的代码
+    console.log(typeof name);       // 'string'
+    console.log(typeof count);      // 'number'
+    console.log(typeof totalCost);  // 'number'
+    console.log(typeof default);    // 'boolean'
+    console.log(typeof k);          // 'undefined'
+    console.log(typeof q);          // 'undefined'
+    console.log(typeof obj);        // 'object' 这个结果有问题
+
+ 以上这段代码通俗易懂，但是有两点需要说明：
+ 1. 严格来说，`typeof`是作用于其后变量当时所指向的值，而不是变量本身。因为JS对变量本身并没有定义数据类型。
+ 2. 最后一句里，变量`obj`的值是`null`，但是`typeof`返回的值却是`object`。这已经被确认为一个JS语言定义里的bug。但是因为这个bug已经存在很久了，如果改正反倒可能让一些以前运行正常的程序出错。所以这个bug就被一直保留了下来。
+
+在我们的代码里正确判断`null`也很简单：
+
+    // 如何判断一个值为 null
+    console.log(obj === null);    // true
+    console.log(k === null);      // false; k is undefined
+
+### 带强制类型转换的比较
+当你用双等号`==`比较两个不同基础数据类型的值时，JS引擎（engine）会试图进行强制数据转换之后再进行比较，而三等号`===`不进行强制类型转换，反而会既比较数据类型也比较数据值。比如
+
+    console.log("5" == 5);      // true
+    console.log("5" === 5);     // false
+
+    console.log(undefined == null);   // true
+    console.log(undefined === null);  // false
+
+如果双等号的效果恰好是你需要的，当然这样的代码会比你自己转换数据类型后再比较更简洁。反之这会是不那么容易找到的bug。最好的办法是养成习惯：每次比较都问自己：该使用双等号还是三等号？除非你确定双等号真的是你需要的，都使用三等号。
+
+### 基础数据类型的变量也可以调用方法（methods）
+在传统的面向对象语言里，方法是只有对象才有的特性，是让对象比数据更强大的主要因素。但是在JS里，赋值为string、number、boolean这三种基础数据类型的变量也有一些自带的方法可以调用，比如
+
+    var street = "East First Street";
+    var lowercaseStreet = street.toLowerCase();   // 'east first street'
+    var firstChar = street.charAt(0);    // 'E'
+    var middleStreet = street.substring(5, 10);   // 'First'
+
+    var price = 10;
+    var fixedPrice = price.toFixed(2);    // 10.00
+    var hexCount = price.toString(16);    // 'a' 十六进制表达的10
+
+    var isDone = true;
+    var isDoneFlag = isDone.toString();   // 'true'
+
+    var p = "East First Street".toLowerCase();    // type error
+    var q = 10.toFixed(2);    // syntax error
+
+由以上代码的最后两行可以看出来，基础数据类型的值的确是不可以使用方法的；但是代表这些值的变量却可以。其原因是因为JS对应这三种基础数据类型有三种已经内建好的对象类型：String，Number，和Boolean，并且给这三种对象类型提供了一些最常用的方法以简化程序员的工作。为了把这样的好处也带给相应的基础数据类型的变量，JS引擎遇到`price.toFixed(2)`这样的调用方法时，其实执行了类似下面的代码：
+
+    let __price__ = Number(price);
+    return __price__.toFixed(2);
+
+所以一个基础数据类型变量可以使用的方法，其实就是它对应的内建类的方法，这些方法都可以在JS的文档中查到。
 
 # 3. 函数（Function）
 
