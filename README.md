@@ -216,14 +216,24 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     console.log(typeof err);        // 'object'
 
 其次，针对数组，Array类型提供了一个专用函数 .isArray()
-
-    // 接上面的例子
-    console.log(Array.isArray(arr));    // 'true'
+    
+    console.log(Array.isArray(arr));    // 'true'
     console.log(Array.isArray(obj));    // 'false'
     console.log(Array.isArray(err));    // 'false'
 
-第三，`instanceof`运算符
-最后，查询对象的constructor
+第三，`instanceof`运算符可以识别对象类型，但是注意它对一个对象应用于其父类也返回`true`
+
+    console.log(arr instanceof Array);      // 'true'
+    console.log(err instanceof Error);      // 'true'
+    console.log(foo instanceof Function);   // 'true'
+    console.log(arr instanceof Object);     // 'true'
+    
+最后，可以查询对象的constructor，比如
+
+    console.log(arr.constructor === Array);     // 'true'
+    console.log(arr.constructor === Object);    // 'false'
+    
+以上最后两种方法不仅适用于标准内建对象，也适用于自定义构建函数生成的对象。我们会在第五章提及。
 
 # 3. 函数（Function）
 
