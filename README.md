@@ -22,17 +22,17 @@
 和任何其它现代的编程语言一样，JS对普通的算数运算和循环都有很容易理解的使用方法。JS语言本身的与众不同之处很大程度上在于它对数据的表达和处理。根据其在内存里的存储和管理方式，JS支持的数据类型可以分为两大类：基础数据类型（Primitive）和引用数据类型（Reference）。二者的区别对于我们理解对象有很关键的作用。
 ## 基础数据类型
 基础数据类型用于存储比较简单这几类数据：
-* Boolean：布尔值，取值范围只有`true`和`false`
-* Number：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处Number数据类型的关系后面会提及。
-* String：字符串，包括一个字符（JS没有'char'类型），支持Unicode
-* Null：“空”。此类型只有一个值就是`null`
-* Undefined：“未定义”。此类型只有一个值就是`undefined`，最常见的地方是你的代码定义了一个变量但是还没有赋值时，其值为`undefined`
+* boolean：布尔值，取值范围只有`true`和`false`
+* number：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处Number数据类型的关系后面会提及。
+* string：字符串，包括一个字符（JS没有'char'类型），支持Unicode
+* null：“空”。此类型只有一个值就是`null`
+* undefined：“未定义”。此类型只有一个值就是`undefined`，最常见的场景是你的代码定义了一个变量但是还没有赋值时，其值为`undefined`
 
 所有的基础数据类型都是一个具体的值存储于内存某处，而你定义的变量就直接指向这个值（而不是指向具体值的地址；这是和引用类型最大的区别）。而每一个变量也都指向自己的值，并不跟其它变量共享这个存储地址，即便其二者的值是一样的。比如，
 
     // strings
-    var name = "Jack";
-    var answer = "a";
+    var name = "Jack";
+    var answer = "a";
 
     // numbers
     var count = 25;
@@ -155,10 +155,25 @@
     let obj1 = new Object();
     obj1.'id' = 10029;
 
- 二者的效果完全一样。第二种在我们讲到构建函数的时候还会有深入了解。
+ 二者的效果完全一样。第二种方式在我们讲到构建函数的时候还会有深入了解。
 
-### 常见的内建对象
+### 常见的标准内建对象
+除了Object这种对象外，JavaScript还定义了很多标准的对象类型。最常用的有以下几个
+* Array：数组，一组有序、可以索引的值
+* Set: 集合，无索引、无序的一组值
+* Map: 无序的 k-v 值
+* Date: 日期和时间
+* Function: 函数，将会在下一章详细描述
+* RegExp: 正则表达式
+* Error: 通用运行错误。JavaScript还定义了几个专用的错误类型，比如数据类型错误（[TypeError](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypeError)）
+* WeakMap 和 WeakSet: 特殊的Map和Set，在某些情况下对管理内存有重要作用
 
+另外，还有三个我们已经见过的基础数据类型对应的对象，也有人把他们称为基础数据类型的 wrappers
+* Number
+* String
+* Boolean
+
+JavaScript对每个标准对象都提供了相应的自带方法，可以简化很多相关的操作。当然，这些标准对象对Object对象提供的方法，比如`toString()`，也是支持的。
 
 # 3. 函数（Function）
 
