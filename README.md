@@ -180,9 +180,11 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     let person = { 
         name: "Obama",
         job: "retired"
-    };
+    }
+    
     let name = person.name;
     
+
 第二种方法是用方括号括住键值，比如
 
     let name = person["name"];
