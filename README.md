@@ -174,6 +174,47 @@
 * Boolean
 
 JavaScript对每个标准对象都提供了相应的自带方法，可以简化很多相关的操作。当然，这些标准对象对Object对象提供的方法，比如`toString()`，也是支持的。
+### 对象成员的使用
+不论是读写对象的数值成员，还是调用对象的成员函数，都有两种方法。第一种是在对象和成员的键之间用`.`隔开，比如
+    let person = { 
+        name: "Obama",
+        job: "retired"
+     };
+    let name = person.name;
+第二种方法是用方括号括住键值，比如
+    let name = person["name"];
+    var array = [];
+    array["push"](100);     // now array is [100]
+这里需要注意的是
+1. 如果用第二种方法，键值必须用单引号或者双引号标识为字符串，而第一种不用
+2. 虽然第二种方法看起来有些奇怪（因为很多其它语言不支持这样的语法），但是它有一个重要的作用：方括号里可以是一个变量，按运行时的情况赋值。比如
+    let wantName = true;
+    let key = wantName ? "name" : "job";
+    console.log(person[key]);
+## 识别变量的数据类型
+众所周知JavaScript在声明一个变量的时候并不定义其类型，其类型取决于它在运行时所指向数值的类型。所以在运行状态下有时候我们需要识别一个变量的数据类型。一个非常明显的应用场景是实现面向对象编程的多态性：JavaScript可以容易地用同一个函数，根据输入参数的类型和数量，应用不同的逻辑进行处理。但是应该说JavaScript识别变量类型的方法是比较混乱的，有以下几种情况：
+* `typeof`运算符: 可以正确识别各种基础数据类型和function，但是所有其它引用数据类型全部返回`object`。虽然这也不能算错，但是没什么用，毕竟一个 Array 和一个 Error 差很远。比如：
+    let num = 99;
+    console.log(typeof num);        // 'number'
+    let str = "99";
+    console.log(typeof str);        // 'string'
+    let bl = true;
+    console.log(typeof bl);         // 'boolean'
+    let foo = function() {return "happy";};
+    console.log(typeof f);          // 'function'
+    let obj = {};
+    console.log(typeof obj);        // 'object'
+    let arr = [9, 8, 7];
+    console.log(typeof arr);        // 'object'
+    let err = new Error("Something Wrong!");
+    console.log(typeof err);        // 'object'
+* 针对数组，Array类型提供了一个专用函数 .isArray()
+    // 接上面的例子
+    console.log(Array.isArray(arr));    // 'true'
+    console.log(Array.isArray(obj));    // 'false'
+    console.log(Array.isArray(err));    // 'false'
+* `instanceof`运算符
+* 查询对象的constructor
 
 # 3. 函数（Function）
 
