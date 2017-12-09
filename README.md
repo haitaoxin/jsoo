@@ -199,7 +199,7 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
 众所周知JavaScript在声明一个变量的时候并不定义其类型，其类型取决于它在运行时所指向数值的类型。所以在运行状态下有时候我们需要识别一个变量的数据类型。一个非常明显的应用场景是实现面向对象编程的多态性：JavaScript可以容易地用同一个函数，根据输入参数的类型和数量，应用不同的逻辑进行处理。但是应该说JavaScript识别变量类型的方法是比较混乱的，有以下几种情况：
 
 首先，`typeof`运算符: 可以正确识别各种基础数据类型和function，但是所有其它引用数据类型全部返回`object`。虽然这也不能算错，但是没什么用，毕竟一个 Array 和一个 Error 差很远。比如
-    
+
     let num = 99;
     console.log(typeof num);        // 'number'
     let str = "99";
@@ -214,13 +214,13 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     console.log(typeof arr);        // 'object'
     let err = new Error("Something Wrong!");
     console.log(typeof err);        // 'object'
-
-其次，针对数组，Array类型提供了一个专用函数 .isArray()
     
+其次，针对数组，Array类型提供了一个专用函数 .isArray()
+
     console.log(Array.isArray(arr));    // 'true'
     console.log(Array.isArray(obj));    // 'false'
     console.log(Array.isArray(err));    // 'false'
-
+    
 第三，`instanceof`运算符可以识别对象类型，但是注意它对一个对象应用于其父类也返回`true`
 
     console.log(arr instanceof Array);      // 'true'
@@ -229,10 +229,10 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     console.log(arr instanceof Object);     // 'true'
     
 最后，可以查询对象的constructor，比如
-    
+
     console.log(arr.constructor === Array);     // 'true'
     console.log(arr.constructor === Object);    // 'false'
-    
+    
 以上最后两种方法不仅适用于标准内建对象，也适用于自定义构建函数生成的对象。我们会在第五章提及。
 
 # 3. 函数（Function）
