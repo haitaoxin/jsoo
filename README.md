@@ -229,7 +229,7 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     console.log(arr instanceof Object);     // 'true'
     
 最后，可以查询对象的constructor，比如
-
+    
     console.log(arr.constructor === Array);     // 'true'
     console.log(arr.constructor === Object);    // 'false'
     
