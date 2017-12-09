@@ -180,7 +180,7 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     let person = { 
         name: "Obama",
         job: "retired"
-     };
+    };
     let name = person.name;
     
 第二种方法是用方括号括住键值，比如
@@ -212,7 +212,7 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
 ## 释放对象使用的内存
 JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占用问题。但是如果你使用的对象使用了很大内存，还是会导致程序运行速度降低。JavaScript没有命令去释放一个对象占据的存储空间。但是当一个对象没有变量指向它时，它就会及时被JavaScript的引擎释放。你需要做的仅仅是把变量指向`null`
 
-    let obj = new Object{};
+    let obj = new Object{};
     obj.data = "something really big";
     // 处理 obj 相关的逻辑
     
