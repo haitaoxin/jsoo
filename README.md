@@ -204,7 +204,8 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     }
 
     let name = person.name;
-```  
+```
+
 第二种方法是用方括号括住键值，比如
 
 ```
@@ -219,9 +220,11 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     let wantName = true;
     let key = wantName ? "name" : "job";
     console.log(person[key]);
-```    
+```
+
 ### 对象成员的增减
 通过之前的例子，我们已经看到如何容易地增加一个对象的成员。减少一个成员可以使用`delete`运算符
+
 ```
     let person2 = {
         name: "Josh",
@@ -229,7 +232,8 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
         advisor: "Prof. Obama"
     }
     delete person2.advisor;
-```    
+```
+ 
 如果多余的成员变量并没有占用很大内存空间，通常并没用必要经常去除它们。一旦去除只后再试图读写这个成员变量，反倒会导致运行错误。
 
 在很多情况下你定义好了对象的成员，并不希望其他使用者去增减它们。如何做到这一点，我们会在第四章讲述。
