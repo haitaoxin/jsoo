@@ -30,6 +30,7 @@
 
 所有的基础数据类型都是一个具体的值存储于内存某处，而你定义的变量就直接指向这个值（而不是指向具体值的地址；这是和引用类型最大的区别）。而每一个变量也都指向自己的值，并不跟其它变量共享这个存储地址，即便其二者的值是一样的。比如，
 
+```
     // strings
     var name = "Jack";
     var answer = "a";
@@ -54,10 +55,12 @@
     let val2 = val1;  // val2 现在也将‘50’这个值存于自己的存储空间内
     val1 = 25;
     console.log(val2);  // 50；val2的值并不随着val1而改变
+```
 
 ### 识别基础数据类型
 由于JS在语法上定义一个变量的时候，并不需要声明变量类型，其后赋值时也不进行类型检查，所以有时候程序本身需要动态地检查其所持有的值的类型。为此JS提供了`typeof`操作符:
 
+```
     // 继续上面的代码
     console.log(typeof name);       // 'string'
     console.log(typeof count);      // 'number'
@@ -66,6 +69,7 @@
     console.log(typeof k);          // 'undefined'
     console.log(typeof q);          // 'undefined'
     console.log(typeof obj);        // 'object' 这个结果有问题
+```
 
  以上这段代码通俗易懂，但是有两点需要说明：
  1. 严格来说，`typeof`是作用于其后变量当时所指向的值，而不是变量本身。因为JS对变量本身并没有定义数据类型。
@@ -73,24 +77,29 @@
 
 在我们的代码里正确判断`null`也很简单：
 
+```
     // 如何判断一个值为 null
     console.log(obj === null);    // true
     console.log(k === null);      // false; k is undefined
+```
 
 ### 带强制类型转换的比较
 当你用双等号`==`比较两个不同基础数据类型的值时，JS引擎（engine）会试图进行强制数据转换之后再进行比较，而三等号`===`不进行强制类型转换，反而会既比较数据类型也比较数据值。比如
 
+```
     console.log("5" == 5);      // true
     console.log("5" === 5);     // false
 
     console.log(undefined == null);   // true
     console.log(undefined === null);  // false
 
+```
 如果双等号的效果恰好是你需要的，当然这样的代码会比你自己转换数据类型后再比较更简洁。反之这会是不那么容易找到的bug。最好的办法是养成习惯：每次比较都问自己：该使用双等号还是三等号？除非你确定双等号真的是你需要的，都使用三等号。
 
 ### 基础数据类型的变量也可以调用一些方法（methods）
 在传统的面向对象语言里，方法是只有对象才有的特性，是让对象比数据更强大的主要因素。但是在JS里，赋值为string、number、boolean这三种基础数据类型的变量也有一些自带的方法可以调用，比如
 
+```
     var street = "East First Street";
     var lowercaseStreet = street.toLowerCase();   // 'east first street'
     var firstChar = street.charAt(0);    // 'E'
@@ -105,11 +114,14 @@
 
     var p = "East First Street".toLowerCase();    // type error
     var q = 10.toFixed(2);    // syntax error
+```
 
 由以上代码的最后两行可以看出来，基础数据类型的值的确是不可以使用方法的；但是代表这些值的变量却可以。其原因是因为JS对应这三种基础数据类型有三种已经内建好的对象类型：String，Number，和Boolean，并且给这三种对象类型提供了一些最常用的方法以简化程序员的工作。为了把这样的好处也带给相应的基础数据类型的变量，JS引擎遇到`price.toFixed(2)`这样的调用方法时，其实执行了类似下面的代码：
 
+```
     let __price__ = new Number(price);      //  构建一个 Number 对象
     return __price__.toFixed(2);
+```
 
 所以一个基础数据类型变量可以使用的方法，其实就是它对应的内建对象的方法，这些方法都可以在JS的文档中查到。关于这些标准内建对象（standard built-in objects，也有一个更容易混淆的名字叫全局对象 global objects），我们后面还会讲到。
 ## 引用数据类型：初步认识对象
@@ -117,17 +129,21 @@
 
 引用数据类型的变量很像C语言的指针或者reference，你可以将其理解为里面存储的是指向对象的地址。但是不同于C的指针，你是无法读取这个地址的绝对值的（实际上你也不需要）。每次你读取一个变量，如果变量里存的是基础数据类型，JS引擎就把这个数值返回给你；如果变量里存的是对象的地址，JS引擎就自动按地址取得对象送给你。以下的代码有助于你理解这些概念：
 
+```
     let a = { 'count:': 5 };    // a 里存了指向一个对象的地址
     let b = a;                  // b 被赋值为 a，现在 b 里存储的是和 a 一样的地址，所以 b 也指向了同一个对象
     a.count = 9;                // 通过 a 改变对象里的一个值
     console.log(b.count);       // 9
+```
 
 对比于
 
+```
     let a = 5;
     let b = a;
     a = 9;
     console.log(b);             // 5
+```
 
 就可以看出来JS对于不同数据类型存取的不同方法。
 
@@ -137,6 +153,7 @@
 ### 构建对象（Object）
 构建一个狭义的对象，我们通常直接赋值就可以：
 
+```
     let laowang = {
         'name': '老王',
         'age': 35,
@@ -149,11 +166,14 @@
     person.name = "老张";               // 以后再填充内容
     person.age = 24;
     person.relation = 'undefined';
+```
 
 比较少见的另一个形式是使用对象的构建函数：
 
+```
     let obj1 = new Object();
     obj1.'id' = 10029;
+```
 
  二者的效果完全一样。第二种方式在我们讲到构建函数的时候还会有深入了解。
 
@@ -177,36 +197,39 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
 ### 对象成员的使用
 不论是读写对象的数值成员，还是调用对象的成员函数，都有两种方法。第一种是在对象和成员的键之间用`.`隔开，比如
 
-    let person = { 
+```
+    let person = {
         name: "Obama",
         job: "retired"
     }
-    
-    let name = person.name;
-    
 
+    let name = person.name;
+```  
 第二种方法是用方括号括住键值，比如
 
+```
     let name = person["name"];
     var array = [];
     array["push"](100);     // now array is [100]
-    
+```
+
 这里需要注意的是，如果用第二种方法，键值必须用单引号或者双引号标识为字符串，而第一种不用。另外，虽然第二种方法看起来有些奇怪（因为很多其它语言不支持这样的语法），但是它有一个重要的作用：方括号里可以是一个变量，按运行时的情况赋值。比如
 
+```
     let wantName = true;
     let key = wantName ? "name" : "job";
     console.log(person[key]);
-    
+```    
 ### 对象成员的增减
 通过之前的例子，我们已经看到如何容易地增加一个对象的成员。减少一个成员可以使用`delete`运算符
-
+```
     let person2 = {
         name: "Josh",
         dept: "Math",
         advisor: "Prof. Obama"
     }
     delete person2.advisor;
-    
+```    
 如果多余的成员变量并没有占用很大内存空间，通常并没用必要经常去除它们。一旦去除只后再试图读写这个成员变量，反倒会导致运行错误。
 
 在很多情况下你定义好了对象的成员，并不希望其他使用者去增减它们。如何做到这一点，我们会在第四章讲述。
@@ -214,17 +237,20 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
 ## 释放对象使用的内存
 JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占用问题。但是如果你使用的对象使用了很大内存，还是会导致程序运行速度降低。JavaScript没有命令去释放一个对象占据的存储空间。但是当一个对象没有变量指向它时，它就会及时被JavaScript的引擎释放。你需要做的仅仅是把变量指向`null`
 
+```
     let obj = new Object{};
     obj.data = "something really big";
     // 处理 obj 相关的逻辑
     
     obj = null;     // 之后对象占用的空间会被释放
+```
 
 ## 识别变量的数据类型
 众所周知JavaScript在声明一个变量的时候并不定义其类型，其类型取决于它在运行时所指向数值的类型。所以在运行状态下有时候我们需要识别一个变量的数据类型。一个非常明显的应用场景是实现面向对象编程的多态性：JavaScript可以容易地用同一个函数，根据输入参数的类型和数量，应用不同的逻辑进行处理。但是应该说JavaScript识别变量类型的方法是比较混乱的，有以下几种情况：
 
-首先，`typeof`运算符: 可以正确识别各种基础数据类型和function，但是所有其它引用数据类型全部返回`object`。虽然这也不能算错，但是没什么用，毕竟一个 Array 和一个 Error 差很远。比如
+首先，是我们已经见过的`typeof`运算符: 可以正确识别除了`null`之外的各种基础数据类型和function，但是所有其它引用数据类型全部返回`object`。虽然这也不能算错，但是没什么用，毕竟一个 Array 和一个 Error 差很远。比如
 
+```
     let num = 99;
     console.log(typeof num);        // 'number'
     let str = "99";
@@ -239,26 +265,36 @@ JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占�
     console.log(typeof arr);        // 'object'
     let err = new Error("Something Wrong!");
     console.log(typeof err);        // 'object'
-    
+```
+
 其次，针对数组，Array类型提供了一个专用函数 .isArray()
 
+```
+    // 继续上面的代码
     console.log(Array.isArray(arr));    // 'true'
     console.log(Array.isArray(obj));    // 'false'
     console.log(Array.isArray(err));    // 'false'
-    
+```
+
 第三，`instanceof`运算符可以识别对象类型，但是注意它对一个对象应用于其父类也返回`true`
 
+```
+    // 继续上面的代码
     console.log(arr instanceof Array);      // 'true'
     console.log(err instanceof Error);      // 'true'
     console.log(foo instanceof Function);   // 'true'
     console.log(arr instanceof Object);     // 'true'
-    
+```
+
 最后，可以查询对象的constructor，比如
-    
+
+```
+    // 继续上面的代码
     console.log(arr.constructor === Array);     // 'true'
     console.log(arr.constructor === Object);    // 'false'
-    
-以上最后两种方法不仅适用于标准内建对象，也适用于自定义构建函数生成的对象。我们会在第五章提及。
+```
+
+以上最后两种方法不仅适用于标准内建对象，也适用于使用自定义的构建函数生成的对象。我们会在第五章专门讲述构建函数。
 
 # 3. 函数（Function）
 
