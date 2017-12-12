@@ -23,7 +23,7 @@
 ## 基础数据类型
 基础数据类型用于存储比较简单这几类数据：
 * boolean：布尔值，取值范围只有`true`和`false`
-* number：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处Number数据类型的关系后面会提及。
+* number：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处number数据类型的关系后面会提及。
 * string：字符串，包括一个字符（JS没有'char'类型），支持Unicode
 * null：“空”。此类型只有一个值就是`null`
 * undefined：“未定义”。此类型只有一个值就是`undefined`，最常见的场景是你的代码定义了一个变量但是还没有赋值时，其值为`undefined`
@@ -72,7 +72,7 @@
 ```
 
  以上这段代码通俗易懂，但是有两点需要说明：
- 1. 严格来说，`typeof`是作用于其后变量当时所指向的值，而不是变量本身。因为JS对变量本身并没有定义数据类型。
+ 1. 严格来说，`typeof`是作用于其后变量当时所被赋予的值，而不是变量本身。因为JS对变量本身并没有定义数据类型。
  2. 最后一句里，变量`obj`的值是`null`，但是`typeof`返回的值却是`object`。这已经被确认为一个JS语言定义里的bug。但是因为这个bug已经存在很久了，如果改正反倒可能让一些以前运行正常的程序出错。所以这个bug就被一直保留了下来。
 
 在我们的代码里正确判断`null`也很简单：
@@ -84,7 +84,7 @@
 ```
 
 ### 带强制类型转换的比较
-当你用双等号`==`比较两个不同基础数据类型的值时，JS引擎（engine）会试图进行强制数据转换之后再进行比较，而三等号`===`不进行强制类型转换，反而会既比较数据类型也比较数据值。比如
+当你用双等号`==`比较两个不同基础数据类型的值时，JavaScript引擎会试图进行强制数据转换之后再进行比较，而三等号`===`不进行强制类型转换，JavaScript引擎会既比较数据类型也比较数据值。比如
 
 ```
     console.log("5" == 5);      // true
@@ -107,7 +107,7 @@
 
     var price = 10;
     var fixedPrice = price.toFixed(2);    // 10.00
-    var hexCount = price.toString(16);    // 'a' 十六进制表达的10
+    var hexCount = price.toString(16);    // 'a'；十六进制表达的10
 
     var isDone = true;
     var isDoneFlag = isDone.toString();   // 'true'
@@ -116,7 +116,7 @@
     var q = 10.toFixed(2);    // syntax error
 ```
 
-由以上代码的最后两行可以看出来，基础数据类型的值的确是不可以使用方法的；但是代表这些值的变量却可以。其原因是因为JS对应这三种基础数据类型有三种已经内建好的对象类型：String，Number，和Boolean，并且给这三种对象类型提供了一些最常用的方法以简化程序员的工作。为了把这样的好处也带给相应的基础数据类型的变量，JS引擎遇到`price.toFixed(2)`这样的调用方法时，其实执行了类似下面的代码：
+由以上代码的最后两行可以看出来，基础数据类型的值是没有方法可以调用的；但是代表这些值的变量却可以。其原因是因为JS对应这三种基础数据类型有三种已经内建好的标准对象类型：String，Number，和Boolean，并且给这三种对象类型提供了一些最常用的方法以简化程序员的工作。为了把这样的好处也带给相应的基础数据类型的变量，JS引擎遇到`price.toFixed(2)`这样的调用方法时，其实执行了类似下面的代码：
 
 ```
     let __price__ = new Number(price);      //  构建一个 Number 对象
@@ -396,7 +396,7 @@ JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占�
 ### 箭头函数的特点
 箭头函数除了长得样子不同于一般函数之外，还有几个重要的特点。
 
-首先，最重要的一条就是在箭头函数范围内的`this`是由此函数定义在语句中的位置决定，而不是被调用时的场景决定。比如当此箭头函数是一个对象里某条函数调用的回调函数时，箭头函数里的`this`总是指向这个对象。这样你写代码的时候就不会因为忘了`.bind(this)`而出错。比如
+首先，最重要的一条就是在箭头函数范围内的`this`是由此函数定义在语句中的位置决定，而不是被调用时的场景决定（对`this`的使用不是很清楚的读者，我建议你一定要再去弄清楚）。比如当此箭头函数是一个对象里某句函数调用的回调函数时，箭头函数里的`this`总是指向这个对象。这样你写代码的时候就不会因为忘了`.bind(this)`而出错。比如
 ```
     // 使用箭头函数
     function CheckMyFile(filename) {
@@ -417,11 +417,11 @@ JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占�
     };
 ```
 
-其次，箭头函数里不能使用`arguments`这个标准对象。
+其次，箭头函数里不能使用我们下面马上就要讲到的`arguments`这个标准对象。
 
 第三，箭头函数不能做构建函数，也就是不能用关键字`new`来调用。
 
-第四，跟以上三条密切相关的，箭头函数不能另外绑定`this`、`arguments`和`new.target`。另外，它也不能绑定`super`。
+第四，跟以上三条密切相关的，箭头函数不能另外绑定`this`、`arguments`、`super`和`new.target`。另外，因为不能改变`this`，箭头函数不能（也不需要）使用`bind()`方法；使用`call()`和`apply()`的时候，第一个输入参数的`this`也会被忽略掉。
 
 第五，箭头函数没有原型（prototype）。反正它不能用来做构建函数，所以这条没什么关系。
 
@@ -435,7 +435,7 @@ JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占�
     let sorted = arr.sort((a, b) => b - a);
 ```
 ### generator
-ES6 还引入了一种新的特殊函数，generator，用 `function *`来定义。我认为它更适合放在类似于“ES6新功能”或者“JavaScript Async 编程”这样的书里跟Promise一起介绍比较好。希望我以后有机会再写吧。
+ES6 还引入了一种新的特殊函数，generator，用 `function*`来定义。我认为它更适合放在类似于“ES6新功能”或者“JavaScript Async 编程”这样的书里跟Promise一起介绍比较好。希望我以后有机会再写吧。
 ## 输入参数
 ### 输入参数的随意性
 不论是定义还是调用函数，函数名之后立刻就是输入参数了。跟很多语言不同，JavaScript引擎并不严格检查参数的类型、个数，但是参数的次序还是重要的。比如
@@ -490,8 +490,137 @@ ES6 还引入了一种新的特殊函数，generator，用 `function *`来定义
 ```
 所以不论你喜欢不喜欢这种随意性，它都是JavaScript不可避免的一部分，你还是要熟练地掌握它。
 
-## arguments 变量
+## arguments 对象
+除了箭头函数之外，其它“普通”的函数域范围内，除了调用的时候输入的参数之外，还有一个隐含的输入参数：`arguments`。你可以这样理解`arguments`：JavaScript引擎把所有调用一个函数时输入的参数（不管函数定义里有没有、有几个参数）按顺序排好，放到这个对象里。它对每个输入参数的排序很像是标准数组对象里每个成员的排序，而JavaScript也给它加上一些数组对象同名的方法让你使用这些参数。但是`arguments`不是标准数组对象，当然我们可以轻易地把它变成数组：
 
+```
+    function something() {
+      console.log(typeof arguments);    // 'object'
+      console.log(Array.isArray(arguments););   // 'false'
+      let arr = [...arguments];         // arr is an Array
+    }
+```
+
+JavaScript提供这样一个对象的目的很简单：如果你的函数需要处理输入对象个数不确定的情况，可以用这个对象查询输入参数的个数、遍历每个输入参数；如果你的函数没有这种需要，那你使用函数定义里的输入参数变量名就够了。
+
+`arguments`对象提供的最重要的两个用法是`.length`和方括号索引。比如我们要计算任意个数值的和：
+```
+    function sumOfAll() {
+      var result = 0,
+          i = 0,
+          len = arguments.length;
+
+      while(i < len) {
+        result += arguments[i];
+        i++;
+      }
+
+      return result;
+    }
+
+    console.log(sumOfAll(5, 6, 7, 8));  // 26
+    console.log(sumOfAll());            // 0
+```
+如果此函数定义了输入参数名，那这些输入参数其实就是按次序排列的`arguments`的元素。比如
+```
+  function twoParam(first, second) {
+    console.log((first === arguments[0]) + ' and ' + (second === arguments[1]));
+  }
+
+  twoParam('hello', 9);   // 'true and true'
+  twoParam(100);   // 'true and true'; second 和 arguments[1] 都是 undefined
+```
+### 函数的 length
+顺便提一下，函数作为一个对象，它也有`length`这个特征值，等于函数定义里的参数个数(对比于`arguments.length`是函数被调用时实际传入的参数个数)。比如
+```
+    // 接上面两段代码
+    console.log(sumOfAll.length);   // 0
+    console.log(twoParam.length);   // 2
+```
+不过函数的`length`好像没什么用，至少我目前还没有机会真的在产品代码里使用。
+## 函数重载（overloading）
+前面已经提到过JavaScript的函数重载，这里再多啰嗦两句。看看以下的代码
+```
+    function sayMsg(message) {
+      console.log(message);
+    }
+
+    function sayMsg() {
+      console.log('Have a nice day!')
+    }
+
+    sayMsg();           // Have a nice day!
+    sayMsg('Hello');    // Have a nice day!
+```
+这段代码运行不会出错，但是最后一句并没有像其它面向对象语言的函数重载那样去调用第一个函数，而是也运行了第二个函数。这是因为第二个函数定义的时候，因为与第一个重名（即便参数列表不同），已经把第一个函数覆盖了----第一个函数再也无法被调用了。而第二个并不在乎是否有输入参数。
+
+所以，在JavaScript里需要判断输入参数的个数、类型等来实现函数重载的效果：
+```
+    function sayMsg(message) {
+      if(!message) {                  // 或者 if(arguments.length === 0) {
+        message = 'Have a nice day!'
+      }
+      console.log(message);
+    }
+
+    sayMsg();           // Have a nice day!
+    sayMsg('Hello');    // Hello
+```
+## 作为对象方法（method）的函数
+我们已经知道一个对象可以有任意个特征值（properties），而每一个特征值都可以是基础数据类型或者另一个对象。而函数这种对象在JavaScript里是“一等公民”，当然也可以做对象的特征值。作为另一个对象特征值的函数被叫做这个对象的方法（method）。这种叫法跟其它面向对象语言一致，很容易理解。但是反之，函数作为对象也有它自己的特征值、有它自己的方法，这与很多语言不一样，我们下面也会遇到。
+### 定义方法
+定义一个对象的方法跟定义其它类似的对象特征没什么不同，唯一区别就是分号“:”后面跟着的是函数定义：
+```
+    var person = {
+      name: "老王",
+      sayName: function) {
+        console.log(person.name);
+      }
+    }
+
+    person.sayName();   // 老王
+
+    person.sayAgain = function() {        // 也可以动态增减对象的方法
+      console.log(person.name.repeat(2));
+    }
+
+    person.sayAgain();  // 老王老王
+```
+以上的代码虽然工作正常，但是有个很大的问题：每当方法需要用到对象的其它特征值的时候，必须前缀对象的名字`person.`。如果以后对象的名字改了、被复制了或者用其它方法生成新的对象，这些方法就都不工作了。⚠️ 如果不加这个前缀，这些方法就更不能工作了，因为它们找不到一个叫“name”的变量，而JavaScript并不会因为这是某个对象的方法就自动把这个对象的同名特征值拿过来用。
+
+这个时候就要用到`this`这个关键字了。完全讲解`this`的概念大概需要另外一本书，本节只能讲解在方法里怎么使用它。
+### `this`对象
+首先，`this`也是一个对象（所以你才可以使用`this.name`）。在一个函数内部，它就是那个调用此函数的对象，是在被调用的时候动态决定的（箭头函数除外----如果你已经忘了，请翻回去复习）。简略地讲，常见的`this`有这么几种情况：
+* 如果一个非方法的全局函数被调用，它的`this`就是“全局对象”。问题在于这个全局对象并不一定是什么；比如在一个浏览器里它通常是`window`对象，显然在NodeJS里就不是。所以除非你很清楚知道为什么要在全局函数里使用`this`，就不要用。
+* 作为对象的方法，通常是这样被调用的：`object.function(parameters)`。这时`function`里的`this`就是前面的`object`，所以可以用`this.`来获取这个对象的任何特征值。这是方法里很常见的使用。
+* 在回调函数（callback）里，既然是回调函数，调用这个函数的对象就往往不是你能控制甚至你能知道的。在这种情况下，回调函数里的`this`几乎是不能用的。但是作为方法里的回调函数，你又往往要读写此对象的特征值（比如更新一个对象内部的状态）。这时候你可以使用箭头函数（在箭头函数的章节有例子），也可以使用下面的几个工具。
+* 使用`call()`、`apply()`或者`bind()`设定`this`。这是我们下节要讲的内容。
+
+### 设定`this`
+如前所述，有时候你需要设定一个函数的`this`对象。虽然你不能直接写`function.this = ...`，但是JavaScript提供了很方便的几个方法（正好温习一下，函数也是对象，也有自己的方法）。
+#### `call()`方法
+函数本来就是被用来调用的，居然它还有一个`call`方法是有点儿奇怪的。我们可以这样理解：如果是简单的调用，你不需要用这个方法；如果你特意用了`call`，那就是要更“高级”地使用这个函数了----这个高级之处，就是设定函数的`this`。为了区分这个函数和它所拥有的`call`方法（也是个函数），我们称这个函数为父函数。
+
+`call`的使用不复杂：因为它是父函数的方法，它要被用`.`加在父函数名后面；因为它自己也是函数，它名子后面要加括号和参数。它的第一个参数永远是父函数所需要的`this`所指的对象，其它参数会被完整地送给父函数。比如
+```
+    function sayName(label) {
+      console.log(`In ${label} my name is ${this.name}`);
+    }
+
+    var p1 = { name: 'Jack Ma' };
+    var p2 = { name: 'YT Jia' };
+
+    let name = 'Obama';
+
+    sayName.call(p1, 'person1');    // In person1 my name is Jack Ma
+    sayName.call(p2, 'person2');    // In person2 my name is YT Jia
+
+    sayName('global');              // In global my name is result (Chrome)
+                                    // In global my name is undefined (NodeJS)
+```
+以上代码执行到`sayName.call(p1, 'person1');`这句话时，你可以想象成JavaScript引擎先把`sayName`函数里所有的`this`用`call`的第一个参数（也就是p1）代替，然后把第二个参数（‘person1’）传给这个新的`sayName`，让它执行。
+
+另外，最后一句话是在最新的Chrome浏览器和NodeJS 6.x LTS里执行的结果。你可以看到‘Obama’并没有被`this.name`找到。这是因为把`this`指向全局太危险----设想你在离这句话很远的地方有个变量叫‘name’，你可能无意间就把那个变量的值改变了，也没有任何报错。所以新的JavaScript引擎已经不给你设定全局为`this`，你代码的错误更容易在开发阶段就被发现。
 
 # 4. 对象：深入了解
 
