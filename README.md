@@ -586,10 +586,11 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 
     person.sayAgain();  // 老王老王
 ```
-以上的代码虽然工作正常，但是有个很大的问题：每当方法需要用到对象的其它特征值的时候，必须前缀对象的名字`person.`。如果以后对象的名字改了、被复制了或者用其它方法生成新的对象，这些方法就都不工作了。⚠️ 如果不加这个前缀，这些方法就更不能工作了，因为它们找不到一个叫“name”的变量，而JavaScript并不会因为这是某个对象的方法就自动把这个对象的同名特征值拿过来用。
+以上的代码虽然工作正常，但是有个很大的问题：每当方法需要用到对象的其它特征值的时候，必须前缀对象的名字`person.`。如果以后对象的名字改了、被复制了或者用其它方法生成新的对象，这些方法就都不工作了。⚠️ 如果不加这个前缀，这些方法就更不能工作了，因为它们找不到一个叫“name”的变量，而JavaScript并不会因为这是某个对象的方法就自动把这个对象的同名特征值拿过来用。这个时候就要用到`this`这个关键字了。完全讲解`this`的概念大概需要另外一本书，但是在下一节我们会简单讲解怎么使用它。
 
-这个时候就要用到`this`这个关键字了。完全讲解`this`的概念大概需要另外一本书，本节只能讲解在方法里怎么使用它。
-### `this`对象
+最后需要指出的是，作为方法的函数跟其它函数没有本质区别，唯一的区别就是它被定义在一个对象内部并且通常被当作对象的一个特征值被调用而已。
+
+## `this`对象
 首先，`this`也是一个对象（所以你才可以使用`this.name`）。在一个函数内部，它就是那个调用此函数的对象，是在被调用的时候动态决定的（箭头函数除外----如果你已经忘了，请翻回去复习）。简略地讲，常见的`this`有这么几种情况：
 * 如果一个非方法的全局函数被调用，它的`this`就是“全局对象”。问题在于这个全局对象并不一定是什么；比如在一个浏览器里它通常是`window`对象，显然在NodeJS里就不是。所以除非你很清楚知道为什么要在全局函数里使用`this`，就不要用。
 * 作为对象的方法，通常是这样被调用的：`object.function(parameters)`。这时`function`里的`this`就是前面的`object`，所以可以用`this.`来获取这个对象的任何特征值。这是方法里很常见的使用。
@@ -601,7 +602,7 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 #### `call()`方法
 函数本来就是被用来调用的，居然它还有一个`call`方法是有点儿奇怪的。我们可以这样理解：如果是简单的调用，你不需要用这个方法；如果你特意用了`call`，那就是要更“高级”地使用这个函数了----这个高级之处，就是设定函数的`this`。为了区分这个函数和它所拥有的`call`方法（也是个函数），我们称这个函数为父函数。
 
-`call`的使用不复杂：因为它是父函数的方法，它要被用`.`加在父函数名后面；因为它自己也是函数，它名子后面要加括号和参数。它的第一个参数永远是父函数所需要的`this`所指的对象，其它参数会被完整地送给父函数。比如
+`call`的使用不复杂：因为它是父函数的方法，它要被用`.`加在父函数名后面；因为它自己也是函数，它名子后面要加括号和参数。它的第一个参数永远是父函数所需要的`this`所指的对象，其后的所有参数会被完整地按顺序送给父函数。比如
 ```
     function sayName(label) {
       console.log(`In ${label} my name is ${this.name}`);
@@ -618,10 +619,90 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
     sayName('global');              // In global my name is result (Chrome)
                                     // In global my name is undefined (NodeJS)
 ```
-以上代码执行到`sayName.call(p1, 'person1');`这句话时，你可以想象成JavaScript引擎先把`sayName`函数里所有的`this`用`call`的第一个参数（也就是p1）代替，然后把第二个参数（‘person1’）传给这个新的`sayName`，让它执行。
+以上代码执行到`sayName.call(p1, 'person1');`这句话时，你可以想象成JavaScript引擎先把`sayName`函数里所有的`this`用`call`的第一个参数（也就是p1）代替，然后把第二个参数（‘person1’）传给这个替换过`this`的`sayName`，让它执行。
 
 另外，最后一句话是在最新的Chrome浏览器和NodeJS 6.x LTS里执行的结果。你可以看到‘Obama’并没有被`this.name`找到。这是因为把`this`指向全局太危险----设想你在离这句话很远的地方有个变量叫‘name’，你可能无意间就把那个变量的值改变了，也没有任何报错。所以新的JavaScript引擎已经不给你设定全局为`this`，你代码的错误更容易在开发阶段就被发现。
+#### `apply()`方法
+跟`call()`非常类似的另一个方法是`apply()`。它们的唯一区别是`apply()`只接受两个参数：第一个和`call()`一样是`this`所指的对象，第二个是一个数组，其成员为依次排列的父函数的输入参数。这里要注意两点：
+* 即便父函数只有一个输入参数，你也要把它放到一个数组里
+* 虽然你在`apply()`用的是数组作为第二个参数，父函数得到的`arguments`还是那个“类似于数组”的对象，不是一个数组。
 
+下面看个简单的例子：
+```
+    let myCalc = {
+      base: 0,
+
+      sum: function(first, second) {
+        return this.base + first + second;
+      }
+    }
+
+    let n1 = { base: 10 }, n2 = { base: 100 };
+    let inputs = [2, 3];
+
+    console.log(myCalc.sum(2, 3));              // 5
+    console.log(myCalc.sum.apply(n1, inputs));   // 15
+    console.log(myCalc.sum.apply(n2, inputs));   // 105;
+
+    console.log(myCalc.sum.call(n1, ...inputs));   // 15
+```
+这段代码演示了你可以把一个对象的方法作用于另一个对象上。从这个意义上讲，`apply`这个词用得还是很贴切的。最后一行的用法不仅说明了`call`和`apply`的相似性，而且在有了 spread operator （`...`）之后，你可以如此简单地把一个数组“打开”，以至于`apply`显得有点儿多余了。
+#### `bind()`方法
+在箭头函数出现之前，`bind()`方法大概是这三种方法里最重要的了。它的作用跟`call`和`apply`正好相反：它是为了避免在程序运行过程中`this`被动态绑定到其它对象上，而在函数定义的代码里选择一个`this`，而不是把运行时调用这个函数的对象当作`this`。另外，一个函数被`bind`了之后的结果是生成了一个新的函数，而不是被调用了。这点和`call`、`apply`也不一样。
+
+下面咱们来看看在对象的方法为什么需要它。
+```
+    // 接上面的代码
+    myCalc.timeout = function(sec) {
+        setTimeout(function(){
+          console.log("Timeout!", this.base);
+        },
+        sec * 1000);
+      }
+
+    myCalc.timeout(2);                  // 2秒之后： undefined
+```
+这段代码的第二行里，`setTimeout`这个JavaScript标准函数的第一个参数必须是个回调函数，这个回调函数是在到时之后由JavaScript引擎调用的。所以这时，回调函数里的`this`是JavaScript引擎，它没有`base`这个特征值，`this.base`就是`undefined`了。其实我们想读取的是`myCalc`对象的`base`值，这时`bind`可以帮我们绑定正确的`this`：
+
+```
+    // 上面那段代码修改之后
+    myCalc.timeout = function(sec) {
+        setTimeout(function(){
+          console.log("Timeout!", this.base);
+        }.bind(this),       // 加上bind，生成了一个新的回调函数
+        sec * 1000);
+      }
+
+    myCalc.timeout(2);                  // 2秒之后： 0
+```
+在`.bind(this)`里，`this`是指此语句所在最近范围的对象，也就是 myCalc。当timer到时，JavaScript引擎调用这个回调函数的时候，`this`就是我们期望的 myCalc 了。如何用箭头函数更简洁地实现同样的效果，就六个读者作为一个小练习吧。
+
+需要指出的是，如果你对 timeout 这个成员函数调用其`call`或者`apply`方法，那么它的`this`、包括它里面回调函数的`this`还是会被改变的：
+```
+    // 接上面的代码
+    myCalc.timeout.apply(n1, [3]);      // 3秒之后： 10
+```
+
+除了以上这个`bind()`最常见的用处（尤其是在箭头函数出现之前），它还可以被用来生成“部分输入参数已定”的新函数。看下面的例子
+```
+   // 接上面的代码
+   let fixedFirst = 1000;
+   let n1Plus1000 = myCalc.sum.bind(n1, firstFirst);
+   console.log(n1Plus1000(8));      // 1018 = n1.base(10) + first(1000) + second(8)
+```
+n1Plus1000 是一个对 myCalc.sum 用`bind`绑定了两个参数的函数：第一个参数当然是把`this`绑定为 n1，第二个参数 1000 被绑定在 myCalc.sum 的第一个参数 first 上。所以这条语句可以这样理解：你给我一个函数 myCalc.sum， 我帮你把它的 `this` 定死了，把它的第一个输入参数也定死了，然后还给你一个新的函数——这个新函数只需要一个输入参数、也就是 myCalc.sum 的第二个参数就够了。
+
+然后在你调用`n1Plus1000(8)`的时候，这个函数其实是调用 myCalc.sum()并且把`this`赋值为 n1、first 赋值为1000、second 赋值为 8，myCalc.sum()里的语句带入变量值计算：
+
+ n1.base + first + second = 10 + 1000 + 8 = 1018
+
+ 这种用法也是其它语言里比较少见的，更常见的是用一个 wrapper 带入固定的参数：
+ ```
+    function sumOfThree(a, b, c) { return a + b + c; }
+    function sumOfTwo(a, b) { return sumOfThree(100, a, b); }
+    console.log(sumOfTwo(1, 2));    // 103
+ ```
+二者比较，使用`bind()`可以动态生成需要的新函数、动态绑定`this`、使用动态的固定变量，更灵活一些。
 # 4. 对象：深入了解
 
 
