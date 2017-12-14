@@ -660,9 +660,9 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
         sec * 1000);
       }
 
-    myCalc.timeout(2);                  // 2秒之后： undefined
+    myCalc.timeout(2);                  // 2秒之后： undefined
 ```
-这段代码的第二行里，`setTimeout`这个JavaScript标准函数的第一个参数必须是个回调函数，这个回调函数是在到时之后由JavaScript引擎调用的。所以这时，回调函数里的`this`是JavaScript引擎，它没有`base`这个特征值，`this.base`就是`undefined`了。其实我们想读取的是`myCalc`对象的`base`值，这时`bind`可以帮我们绑定正确的`this`：
+这段代码的第二行里，`setTimeout`这个JavaScript标准函数的第一个参数必须是个回调函数，这个回调函数是在到时之后由JavaScript引擎调用的。所以这时，回调函数里的`this`是JavaScript引擎，它没有`base`这个特征值，`this.base`就是`undefined`了。其实我们想读取的是`myCalc`对象的`base`值，这时`bind`可以帮我们绑定正确的`this`：
 
 ```
     // 上面那段代码修改之后
@@ -673,9 +673,9 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
         sec * 1000);
       }
 
-    myCalc.timeout(2);                  // 2秒之后： 0
+    myCalc.timeout(2);                  // 2秒之后： 0
 ```
-在`.bind(this)`里，`this`是指此语句所在最近范围的对象，也就是 myCalc。当timer到时，JavaScript引擎调用这个回调函数的时候，`this`就是我们期望的 myCalc 了。如何用箭头函数更简洁地实现同样的效果，就六个读者作为一个小练习吧。
+在`.bind(this)`里，`this`是指此语句所在最近范围的对象，也就是 myCalc。当timer到时，JavaScript引擎调用这个回调函数的时候，`this`就是我们期望的 myCalc 了。如何用箭头函数更简洁地实现同样的效果，就六个读者作为一个小练习吧。
 
 需要指出的是，如果你对 timeout 这个成员函数调用其`call`或者`apply`方法，那么它的`this`、包括它里面回调函数的`this`还是会被改变的：
 ```
@@ -692,7 +692,7 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 ```
 n1Plus1000 是一个对 myCalc.sum 用`bind`绑定了两个参数的函数：第一个参数当然是把`this`绑定为 n1，第二个参数 1000 被绑定在 myCalc.sum 的第一个参数 first 上。所以这条语句可以这样理解：你给我一个函数 myCalc.sum， 我帮你把它的 `this` 定死了，把它的第一个输入参数也定死了，然后还给你一个新的函数——这个新函数只需要一个输入参数、也就是 myCalc.sum 的第二个参数就够了。
 
-然后在你调用`n1Plus1000(8)`的时候，这个函数其实是调用 myCalc.sum()并且把`this`赋值为 n1、first 赋值为1000、second 赋值为 8，myCalc.sum()里的语句带入变量值计算：
+然后在你调用`n1Plus1000(8)`的时候，这个函数其实是调用 myCalc.sum()并且把`this`赋值为 n1、first 赋值为1000、second 赋值为 8，myCalc.sum()里的语句带入变量值计算：
 
  n1.base + first + second = 10 + 1000 + 8 = 1018
 
