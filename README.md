@@ -722,9 +722,85 @@ n1Plus1000 是一个对 myCalc.sum 用`bind`绑定了两个参数的函数：�
     person1.name = "张三";
     person2.name = "李四";
 ```
-person1 和 person2 都是对象、都有 name 和 age 的特征值。这些特征值既可以在定义的时候赋予（比如 person1 的 name），也可以创建对象之后立刻赋值（比如 person2 的 name)，还可以在你运行了很多其它代码之后再加到对象上。
+person1 和 person2 都是对象、都有 name 和 age 的特征值（或者叫成员）。这些特征值既可以在定义的时候赋予（比如 person1 的 name），也可以创建对象之后立刻赋值（比如 person2 的 name)，还可以在你运行了很多其它代码之后再加到对象上。
 
-特别需要指出的是，`var person2 = new Object();`这句话运行之后，看似你创建了一个空的对象，其实这个对象已经有不少内部（你不可以调用的）和外部（你可以调用的）方法了。其中两个内部方法是 `[[Put]]` 和 `[[Set]]`。
+特别需要指出的是，`var person2 = new Object();`这句话运行之后，看似你创建了一个空的对象，其实这个对象已经有不少内部（你不可以调用的）和外部（你可以调用的）方法了。其中两个内部方法是 `[[Put]]` 和 `[[Set]]`。当你给一个对象以前没有的成员赋值的时候（比如上面代码里 `person1.age = 35;`），`[[Put]]`方法就会被调用：回忆我们以前讲到对象可以简化地想象成很多 key-value 对组成的哈希表，`[[Put]]`的效果相当于在这个哈希表里加入一个key（“age”）和它对应的值（35）。⚠️我特意给 age 加了双引号是因为，虽然代码里 age 看上去好像一个变量名，而我们知道使用变量名的时候是不用引号的；但是在对象的 key-value 表里 key 永远是个字符串。
+
+而你给一个已有的对象成员赋值的时候（比如上面的`person1.name = "张三";`），`[[Set]]`方法就会被调用，改变相应key的value。
+
+当然实际上对象对其特征值的存储比哈希表要复杂。以上面这样的代码生成的成员叫做“自有特征值（own property）”。这样的特征值只属于这个对象，所以你必须通过这个对象来读写它、改变它。还有一类很重要的特征值叫做“原型特征值（prototype property）”，是我们在下一章要讨论的内容。
+
+另外，有时候你会看到别人代码里对象成员的key以下划线开始，比如
+
+```
+	let person1 = {
+		_name: "王宝强",
+		getName: function() { return this._name; }
+	}
+```
+
+这只是一种惯例用以标识内部使用的特征值，但是并没有任何语法上的作用。也就是说，你照样可以直接读写`person1._name`这个变量。当然作为一种好习惯，你应该避免这样做。关于如何封装你不想暴露出去的对象成员，JavaScript并没有提供类似于`private`这样的关键字，但是还是有方法的，我们后面会讲到。
+## 检查对象的特征值
+因为JavaScript对象的特征值并不是像其它语言那样一经定义就永远存在的，所以有时候你要先检查一下它存在与否再使用。有时候你会看到这样的语句：
+
+```
+    if (person1.name) {			// 不可靠的检查
+    	console.log(person1.name);
+    }
+```
+这样写起来最简单，但是不可靠。因为我们知道`if`是判断后面表达式的真伪（Truthy or Falsy），而不是检查存在与否。当然这个值如果不存在，JavaScript会返回`undefined`，这的确是个伪值。但是返回伪值的情况还有其它，比如当 person1.name 的值是0、`false`或者`null`的时候。
+
+为此 JavaScript 提供了一个操作符`in`。这个操作符把左边的字符串在右边的对象的全部键值 （keys）里查找；找到为真、找不到为伪，而不检查这个 key 对应的值。使用举例如下
+
+```
+    var person1 = {
+    	name: "老张",
+    	getName: function() {
+    		return this.name;
+    	}
+    };
+    person1.age = 35;
+    
+    console.log("name" in person1);	// true
+    console.log("age" in person1);	// true
+    console.log("getName" in person1);	// true
+    console.log("title" in person1);	// false
+```
+在以上的代码里，注意两点：
+
+* 需要查询的 key 需要是个字符串或者指向字符串的变量
+* 方法也是可以跟其它特征值一样查询的
+
+但是这个操作符也有个问题：
+
+```
+    // 接上面的代码
+    console.log("toString" in person1);	// true
+```
+显然我们并没有给 person1 定义 “toString” 这个成员。大家知道这个方法是 JavaScript 定义在 `Object` 对象上的，person1 只不过继承过来了它而已。所以它就不是 person1 的自有特征值。我们有的时候只关注自有特征值，JavaScript 提供了一个稍微麻烦一点儿的办法：
+
+```
+    // 接上面的代码
+    console.log(person1.hasOwnProperty("name"));	// true
+    console.log(person1.hasOwnProperty("getName"));	// true
+    console.log(person1.hasOwnProperty("title"));	// false
+    console.log(person1.hasOwnProperty("toString"));	// false
+    console.log(person1.hasOwnProperty("hasOwnProperty"));	// false
+```
+跟`toString()`一样，`hasOwnProperty()`也是一个所有的对象都从`Object`上继承过来的方法。它的作用就是检查一个键值是不是此对象的自由特征值。有了这个方法，在下一章里我们就会很容易区分自有特征值和原型特征值。
+## 删除特征值
+对象的自有特征值可以随时添加，也可以随时删除。比如你临时需要使用一个很大的数组进行一些操作，可以在这些操作相关的对象里给它创建一个成员。一旦操作结束，你就可以删除这个成员以释放内存空间。仅仅把此成员的值赋予 null 并不会删除对象哈希表里的这一项。你需要用`delete`操作彻底删除它：
+
+```
+    // 接以上的代码
+    console.log(person1.age);	// 35
+    delete person1.age;
+    console.log(person1.age);	// undefined
+    console.log("age" in person1);	// false
+```
+在这个操作的背后，是对象内部的另一个标准方法`[[Delete]]`。它会被`delete`操作符调用来去除相应的那一对 key-value。
+## 枚举特征值
+
 # 5. 构建函数（Constructor）和原型（Prototype）
 
 # 6. 继承（Inheritance）
