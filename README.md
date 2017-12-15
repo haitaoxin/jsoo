@@ -147,7 +147,7 @@
 
 就可以看出来JS对于不同数据类型存取的不同方法。
 
-对象内部对数值的存储可以粗略地看作是一张哈希表，这张表的键必须是字符串，而对应的值可以是任何基础数据或者另外一个对象（包括函数、数组等等）。
+对象内部对数值的存储可以粗略地看作是一张哈希表，这张表的键必须是字符串（⚠️ES6新加了`Symbol`数据类型也可以当作 key，希望我们有机会在ES6的书里专门讲解），而对应的值可以是任何基础数据或者另外一个对象（包括函数、数组等等）。
 
 在JavaScript里，“对象（object）”一词其实有两层含义。狭义的内涵是指我们用花括弧标识的若干对 key-value 值的这种数据类型，在英文里第一个字母大些（Object）。而当我们说“所有的引用数据类型都是对象”的时候，这里的“对象”是取其广义，是指狭义的对象数据类型加上其它各种内建的对象类型，即便这些内建类型不一定是被括弧包括的 k-v 对，比如函数、函数、Map、Set等等。
 ### 构建对象（Object）
@@ -724,7 +724,7 @@ n1Plus1000 是一个对 myCalc.sum 用`bind`绑定了两个参数的函数：�
 ```
 person1 和 person2 都是对象、都有 name 和 age 的特征值（或者叫成员）。这些特征值既可以在定义的时候赋予（比如 person1 的 name），也可以创建对象之后立刻赋值（比如 person2 的 name)，还可以在你运行了很多其它代码之后再加到对象上。
 
-特别需要指出的是，`var person2 = new Object();`这句话运行之后，看似你创建了一个空的对象，其实这个对象已经有不少内部（你不可以调用的）和外部（你可以调用的）方法了。其中两个内部方法是 `[[Put]]` 和 `[[Set]]`。当你给一个对象以前没有的成员赋值的时候（比如上面代码里 `person1.age = 35;`），`[[Put]]`方法就会被调用：回忆我们以前讲到对象可以简化地想象成很多 key-value 对组成的哈希表，`[[Put]]`的效果相当于在这个哈希表里加入一个key（“age”）和它对应的值（35）。⚠️我特意给 age 加了双引号是因为，虽然代码里 age 看上去好像一个变量名，而我们知道使用变量名的时候是不用引号的；但是在对象的 key-value 表里 key 永远是个字符串。
+特别需要指出的是，`var person2 = new Object();`这句话运行之后，看似你创建了一个空的对象，其实这个对象已经有不少内部（你不可以调用的）和外部（你可以调用的）方法了。其中两个内部方法是 `[[Put]]` 和 `[[Set]]`。当你给一个对象以前没有的成员赋值的时候（比如上面代码里 `person1.age = 35;`），`[[Put]]`方法就会被调用：回忆我们以前讲到对象可以简化地想象成很多 key-value 对组成的哈希表，`[[Put]]`的效果相当于在这个哈希表里加入一个key（“age”）和它对应的值（35）。⚠️我特意给 age 加了双引号是因为，虽然代码里 age 看上去好像一个变量名，而我们知道使用变量名的时候是不用引号的；但是其实在对象的 key-value 表里 key 永远是个字符串。
 
 而你给一个已有的对象成员赋值的时候（比如上面的`person1.name = "张三";`），`[[Set]]`方法就会被调用，改变相应key的value。
 
@@ -768,7 +768,7 @@ person1 和 person2 都是对象、都有 name 和 age 的特征值（或者叫�
 ```
 在以上的代码里，注意两点：
 
-* 需要查询的 key 需要是个字符串或者指向字符串的变量
+* 需要查询的 key 必须是个字符串或者指向字符串的变量
 * 方法也是可以跟其它特征值一样查询的
 
 但是这个操作符也有个问题：
@@ -777,7 +777,7 @@ person1 和 person2 都是对象、都有 name 和 age 的特征值（或者叫�
     // 接上面的代码
     console.log("toString" in person1);	// true
 ```
-显然我们并没有给 person1 定义 “toString” 这个成员。大家知道这个方法是 JavaScript 定义在 `Object` 对象上的，person1 只不过继承过来了它而已。所以它就不是 person1 的自有特征值。我们有的时候只关注自有特征值，JavaScript 提供了一个稍微麻烦一点儿的办法：
+显然我们并没有给 person1 定义 “toString” 这个成员。大家知道 “toString” 是 JavaScript 定义在 `Object` 对象上的，person1 只不过继承过来了它而已，所以它不是 person1 的自有特征值。 往往我们只关注对象的自有特征值，JavaScript 为此提供了一个稍微麻烦一点儿的办法：
 
 ```
     // 接上面的代码
@@ -787,7 +787,7 @@ person1 和 person2 都是对象、都有 name 和 age 的特征值（或者叫�
     console.log(person1.hasOwnProperty("toString"));	// false
     console.log(person1.hasOwnProperty("hasOwnProperty"));	// false
 ```
-跟`toString()`一样，`hasOwnProperty()`也是一个所有的对象都从`Object`上继承过来的方法。它的作用就是检查一个键值是不是此对象的自由特征值。有了这个方法，在下一章里我们就会很容易区分自有特征值和原型特征值。
+跟`toString()`一样，`hasOwnProperty()`也是一个所有的对象都有的、从`Object`上继承过来的方法。它的作用就是检查一个键值是不是此对象的自有特征值。使用这个方法，在下一章里我们就会很容易区分自有特征值和原型特征值。
 ## 删除特征值
 对象的自有特征值可以随时添加，也可以随时删除。比如你临时需要使用一个很大的数组进行一些操作，可以在这些操作相关的对象里给它创建一个成员。一旦操作结束，你就可以删除这个成员以释放内存空间。仅仅把此成员的值赋予 null 并不会删除对象哈希表里的这一项。你需要用`delete`操作彻底删除它：
 
@@ -800,6 +800,65 @@ person1 和 person2 都是对象、都有 name 和 age 的特征值（或者叫�
 ```
 在这个操作的背后，是对象内部的另一个标准方法`[[Delete]]`。它会被`delete`操作符调用来去除相应的那一对 key-value。
 ## 枚举特征值
+你给一个对象定义的特征值缺省是可以枚举（一一列举出来）的，这是因为每个特征值内部都有一个`[[Enumerable]]`属性，它的值缺省为`true`。既然是内部属性，我们的代码就不能直接修改。不过下面我们会看到如果改变它。
+
+枚举使用的运算符是`for...in`，比如，
+
+```
+	let car = {
+		make: "Toyota",
+		brand: "Camry",
+		drive: function() { console.log("let's go!");}
+	}
+	
+	for (let property in car) {
+		console.log(`Name: ${property} -- Value: ${car[property]}`);
+	}
+	
+	// 输出结果如下
+	// Name: make -- Value: Toyota
+	// Name: brand -- Value: Camry
+	// Name: drive -- Value: function () { console.log("let's go!");}
+```
+我们看到`for...in`循环帮我们把 car 这个对象里我们定义的特征值 key-value 表的每一个 key 放入变量 property 中。前面说过，这个 key 是字符串，所以必须用方括号的方法读取它的值。如果用`car.property`则会得到`undefined`。
+
+`Object`对象还提供了一个方法`keys()`，用来把一个对象的所有特征值的 key 放到一个数组里：
+
+```
+    // 接上面的程序
+    let carKeys = Object.keys(car), len = carKeys.length;
+    
+    for (var i = 0; i < len; i++) {
+        console.log(`Name: ${carKeys[i]} -- Value: ${car[carKeys[i]]}`);
+    }
+```
+输出跟上一段代码是一样的。⚠️但是`Object.keys()`跟`for...in`循环其实有一个不太引人注意的区别：`Object.keys()`只遍历对象的自有特征值，而`for...in`循环把对象继承过来的特征值也获取了，只要此特征值的`[[Enumerable]]`为`true`。
+
+如果你好奇怎么知道一个特征值的`[[Enumerable]]`是否为`true`，每个对象都从`Object`继承过来了一个`propertyIsEnumerable`方法用以查询：
+
+```
+	// 接上面的程序
+	if ("make" in car) {
+		console.log(car.propertyIsEnumerable("make"));	// true
+	}
+	console.log("toString" in car);		// true
+	console.log(car.propertyIsEnumerable("toString")); // false
+	console.log(car.propertyIsEnumerable("propertyIsEnumerable")); // false
+	console.log(carKeys.propertyIsEnumerable("length")); // false
+```
+在以上的代码中，我们知道`car`这个对象是一定有`toString`这个特征值的，而`propertyIsEnumerable`方法我们既然在调用，显然这个特征值也是存在的。`carKeys`是个字符串，它当然有`length`特征值。但是所有这几个特征值的`[[Enumerable]]`都是`false`。
+
+关于对象特征值的枚举、或者叫遍历，我个人的使用经验是：
+
+* 如果对象的创建者已经把一个特征值设为不可枚举，自然有他的道理，尤其是JavaScript标准的内建对象。你一般不用去一个一个特征值检查它的`[[Enumerable]]`
+* 普通对象的特征值其实用到的机会不多，但是一些特殊的对象，比如 Array、Map、Set 这些就常常用到了
+* 从上面的代码大家可以看到，JavaScript提供的方法有的你必须从`Object`上调用（比如`Object.keys()`），有的继承到每一个对象上（比如`car.propertyIsEnumerable()`）。这方面的确是有点儿混乱，给程序员添加了没必要的记忆工作。
+
+## 特征值的类型
+
+## 特征值的特性
+
+## 固化对象
 
 # 5. 构建函数（Constructor）和原型（Prototype）
 
