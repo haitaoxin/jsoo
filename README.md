@@ -1,4 +1,4 @@
-# JavaScript Object-Oriented Programming
+# JavaScript Object-Oriented Programming: Principles and Practices
 # 面向对象的JavaScript编程：原理与实践
 ---
 
@@ -6,11 +6,11 @@
 ## 初衷
 笔者早年编写代码使用过 Motorola 68000 和 x86汇编、C/C++、Pascal、Fortran、PowerBuilder、Visual Basic，后来又短暂接触过Java、Python和Swift。最近这些年来使用最多的是JavaScript（正式名称是ECMAScript，本书经常会缩写为JS）。众所周知，JS问世之初是“难登大雅之堂”的小玩意儿，还要靠冠名Java以壮声势。但是随着浏览器作为软件发布、运行的平台成熟起来，再加上NodeJS项目的兴旺，JS本身的进步和普及程度已经使它成为每一个前台软件工程师和全栈工程师必不可少的工具。
 
-虽然这种语言已经强大到适用于大多数类型的后台服务器程序（更不用说它是前台开发的唯一正式语言），但是还是有人诟病其不够严谨，争论它是不是完全符合面向对象（Object-Oriented）语言的特征。更多的初学者和程序员更是对JS的对象运作机制和使用多少有些含糊不清。这部分地是因为JS的对象跟以前常见的C++或者Java的对象的确有所不同，甚至可以说JS的对象从最初就不像C++或者Java那样经过深思熟虑、严谨定义的。但是幸运的是，发展到今天，JS对OO的支持足以实现绝大多数的编程需要里。
+虽然这种语言已经强大到适用于大多数类型的后台服务器程序（更不用说它是前台开发的唯一正式语言），但是还是有人诟病其不够严谨，争论它是不是完全符合面向对象（Object-Oriented）语言的特征。更多的初学者和程序员则是对JS的对象运作机制和使用多少有些含糊不清。这部分地是因为JS的对象跟以前常见的C++或者Java的对象的确有所不同，甚至可以说JS的对象从最初就不像C++或者Java那样经过深思熟虑、严格定义的。但是幸运的是，发展到今天，JS对OO的支持足以实现绝大多数的编程需要。
 
-本书并不想参与任何无谓的或者纯理论的讨论，只想理清JS的对象到底是怎么回事，以及怎么使用JS最有效地面向对象编程。
+本书并不想参与任何无谓的或者纯理论的讨论，只想理清JS的对象到底是怎么回事，以及怎么使用JS最有效地面向对象编程，和它的局限性在哪儿。
 ## 适合的读者
-本书不是写给初学者看的。读者需要有一定的JS基础以及“知其然且知其所以然”的态度。如果你学习或者使用了一段时间JavaScript，但是对有些概念还是理解得似是而非；或者你以前用C++和Java，对JavaScript的对象、函数总感觉有些别扭，那这本书就恰好是为你写的。
+本书不是写给初学者看的。读者需要有一定的JS基础以及“**知其然且知其所以然**”的态度。如果你学习或者使用了一段时间JavaScript，但是对有些概念还是理解得似是而非；或者你以前用C++和Java，对JavaScript的对象、函数总感觉有些别扭，那这本书就恰好是为你写的。
 
 所有代码都已使用 Node 6.x LTS 环境或者在最新版本的Chrome浏览器里验证过。另外需要抱歉的是有些英文专用单词也许翻译得不是最常见的用法。任何技术上或者翻译上的错误，或者讲述不够清楚的地方，还望读者不吝赐教。
 ## 引用资料
@@ -22,13 +22,15 @@
 和任何其它现代的编程语言一样，JS对普通的算数运算和循环都有很容易理解的使用方法。JS语言本身的与众不同之处很大程度上在于它对数据的表达和处理。根据其在内存里的存储和管理方式，JS支持的数据类型可以分为两大类：基础数据类型（Primitive）和引用数据类型（Reference）。二者的区别对于我们理解对象有很关键的作用。
 ## 基础数据类型
 基础数据类型用于存储比较简单这几类数据：
-* boolean：布尔值，取值范围只有`true`和`false`
-* number：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处number数据类型的关系后面会提及。
-* string：字符串，包括一个字符（JS没有'char'类型），支持Unicode
-* null：“空”。此类型只有一个值就是`null`
-* undefined：“未定义”。此类型只有一个值就是`undefined`，最常见的场景是你的代码定义了一个变量但是还没有赋值时，其值为`undefined`
 
-所有的基础数据类型都是一个具体的值存储于内存某处，而你定义的变量就直接指向这个值（而不是指向具体值的地址；这是和引用类型最大的区别）。而每一个变量也都指向自己的值，并不跟其它变量共享这个存储地址，即便其二者的值是一样的。比如，
+* **boolean**：布尔值，取值范围只有`true`和`false`
+* **number**：任何整数和小数（浮点数）。⚠️ JS里另有`Number`这种对象，与此处number数据类型的关系后面会提及。
+* **string**：字符串，包括一个字符（JS没有'char'类型），支持Unicode
+* **null**：“空”。此类型只有一个值就是`null`
+* **undefined**：“未定义”。此类型只有一个值就是`undefined`，最常见的场景是你的代码定义了一个变量但是还没有赋值时，其值为`undefined`
+* **symbol**：在ES6里引入的一种新数据类型，跟其它类型的用法都不一样，跟面向对象编程关系也不大，在本书里就不讲了。希望有机会再写一本ES6的书吧。
+
+所有的基础数据类型都是一个具体的值存储于内存某处，而你定义的变量就直接被赋予这个值（而不是指向具体值的地址；这是和引用类型最大的区别）。而每一个变量所存贮的值并不跟其它变量共享，即便其二者的内容是一样的。比如，
 
 ```
     // strings
@@ -54,7 +56,7 @@
     let val1 = 50;
     let val2 = val1;  // val2 现在也将‘50’这个值存于自己的存储空间内
     val1 = 25;
-    console.log(val2);  // 50；val2的值并不随着val1而改变
+    console.log(val2);  // 50；val2的值并不随着val1而改变；注意跟后边引用数据类型的例子对比
 ```
 
 ### 识别基础数据类型
@@ -855,8 +857,134 @@ person1 和 person2 都是对象、都有 name 和 age 的特征值（或者叫�
 * 从上面的代码大家可以看到，JavaScript提供的方法有的你必须从`Object`上调用（比如`Object.keys()`），有的继承到每一个对象上（比如`car.propertyIsEnumerable()`）。这方面的确是有点儿混乱，给程序员添加了没必要的记忆工作。
 
 ## 特征值的类型
+我们知道其它面向对象的语言经常把类的成员分为数据（data member）和函数（也就是方法，method），或者分为公共的（public）和私有的（private）。而 JavaScript 的方法其实就是一个对象，除了可以调用之外跟其它对象成员没什么本质区别。JavaScript 对象也没有私有成员，所有成员都是公有的。
+
+但是 JavaScript 的成员可以按另外一种方法分成两类：*data property* 和 *accessor property*。我们在本节之前见到的所有对象成员都是 data property，也是增加对象成员时缺省的方法。accessor property 的使用跟 data property 没什么两样，但是创建它需要定义 getter 或者 setter 或者二者都有。定义一个 accessor property 的 getter 和 setter 需要分别使用关键字`get`和`set`，使用方法如下
+
+```
+	let myNum = {
+		_int: 0,
+		
+		get int() {
+			console.log("myNum -> get int");
+			return this._int;
+		},
+		
+		set int(val) {
+			// 可以在这加代码检查输入值是否为 number
+			console.log(`myNum -> set int: ${val}`);
+			this._int = Math.ceil(val);
+		},
+		
+		get sq() {
+			console.log("myNum -> get sq");
+			return Math.pow(this._int, 2);
+		}
+	}
+	
+	myNum.int = 8.75;			// myNum -> set int: 8.75
+	console.log(myNum["int"]);		// myNum -> get int; 9
+	console.log(myNum.sq);		// myNum -> get sq; 81
+	
+```
+以上这段代码，我们先快进到最后三行，可以看到对 *int* 和 *sq* 这两个变量的读写完全和普通的对象数据成员没区别（⚠️ *int* 在 JavaScript 里不是关键字）。这也是 accessor property 的一个重要好处：对象的使用者不需要什么特殊的语法：既可以用方括号也可以用`.`读写特征值。如果你检查它们的类型，结果也没什么特殊：
+
+```
+    // 接上面的程序
+    console.log("int" in myNum);		// true
+    console.log("sq" in myNum);		// true
+    console.log(typeof myNum.int);		// myNum -> get int; number
+    console.log(typeof myNum.sq);		// myNum -> get sq; number
+```
+
+我们再来看对象定义的内部。`get`和`set`语句看上去都很像是个函数定义，但是没有`function`关键字。它们后面紧跟着的 *int* 和 *sq* 虽然看上去很像是函数名，其实在使用的时候就是普通的变量名。再后面的花括弧里的语句，自然就是在此变量被读或者写的时候被调用的。在定义对象的 accessor property 的时候需要注意以下几点：
+
+* 因为`get`是读取数值的，它必须返回一个数值
+* 而`set`是赋值语句，所以必须有一个输入参数，也就是给这个对象成员赋值时，等号右边的数值（所以它只能有一个！）
+* `get`和`set`不需要都有，但是没有`get`当然你就不能读取（write-only），没有`set`你就不能赋值（read-only）。如果你是在创建有 accessor property 的对象给其他人使用，遇到这种情况你应该提供清晰的文档，否则别人很容易就搞晕了。⚠️尤其是读取没有 getter 的值和在非 strict 模式下写入没有 setter 的值，程序并不会报错！
+* 至于对象内部是否定义一个成员变量对应这个 accessor property 要看你的需要和设计。在我们的例子里，myNum.int 映射到 myNum.\_int 上，而 myNum.sq 是动态计算出来的，没有内部对应值。**后一种做法更好地封装了内部数据**，因为我们已经知道，myNum.\_int 并没有被封装，其实也是可以从外部读写的。
 
 ## 特征值的特性
+我们在前面已经看到，对象的每个特征值，即便只是个基础类型数据，也不是真的简单到只包含一个数值而已。这点也是 JavaScript 不同于其它语言（比如 C++）的地方之一。具体来说，每个特征值还有四个已经被 JavaScript 语言定义好的特性。这些特性以前只是内部使用的，但是在ES5里它们变得可以被我们的程序使用了。它们是：
+
+* `value`：此成员的值，不论是基础数据类型还是对象、函数；缺省为`undefined`
+* `enumerable`：布尔值，缺省为`true`，标识此成员是否可以被枚举
+* `configurable`：布尔值，缺省为`true`，标识此成员是否可以被修改
+* `writable`：布尔值，缺省为`true`，标识此成员是否可以被赋以新的值（也就是它的`value`是否可以被改变）
+* `value`和`writable`两个特性只有 data property 才有，accessor property 没有。这很容易理解：我们已经看到 accessor property 的值和是否可写都是由它的 getter 和 setter 决定的。
+
+这四个特性里，第一个和第四个很容易理解。第二个`enumerable`我们在前面已经见过了，它如果为`false`则此成员的 key 在`for...in`循环里不会出现（这是很多标准对象自带方法的设定）。⚠️如果一个成员的`writable`为`false`而你在非 strict 模式下对其赋值，JavaScript引擎只会默默地把你赋的新值扔掉，你完全不会察觉。所以除非很特殊的情况（比如顾及古老代码的兼容性），一定要 `"use strict"`
+
+比较有意思的是第三个。在英文里"configurable"是个可大可小的概念，在这里它包括这两件事：
+
+1. 此成员是否可以用操作符`delete`删除
+2. 此成员的除了`value`之外的三个特性是否可以被从`false`改成`true`。这句话有点儿不好理解，我们把它拆成三种情况。
+	1. `value`是否可以赋值永远由`writable`的真伪决定
+	2. `configurable`一旦设为`false`就再也没法改为`true`了
+	3. `enumerable`和`writable`，在`configurable`为`false`的情况下可以由`true`改为`false`，但是不能由`false`改为`true`
+
+如果这样的解释还是太烧脑，你可以这样理解：`configurable`设为`false`是件“开弓没有回头箭”的事，而且这个`{configurable: false}`把`enumerable`和`writable`这两个本来“开弓还有回头箭”的特性也变成了“开弓没有回头箭”。如果你还是晕，我实在想不出来更通俗易懂的解释了，但是下面的代码应该会有帮助。
+
+### 设定 data property 的特性
+JavaScript 在`Object`上提供了一个方法`defineProperty()`来设定对象成员的特性。⚠️这个方法又不是被每个对象继承过来的，所以调用它的时候要提供对象的名字，再加上成员的名字和你要设定的特性。最后这个输入参数常被叫做 property descriptor。它就是一个简单的对象，成员是以上四个特性中的一个或者多个。下面咱们看看具体的代码
+
+```
+// 'use strict'
+	let myNum = {
+			int: 0,
+	}；
+		
+	myNum.int = 10;
+	console.log(myNum.int);			// 10
+	console.log(myNum.propertyIsEnumerable("int"));		// true
+	
+	Object.defineProperty(myNum, "int", {	// 这个 property descriptor 包括两个特性
+		enumerable: false,
+	  	writable: false
+	});
+	console.log(myNum.propertyIsEnumerable("int"));		// false
+	
+	myNum.int = 20;		// TypeError 在 strict 模式下
+	console.log(myNum.int);		// 10，在非 strict 模式下赋值失败，但是没有出错！
+	
+	Object.defineProperty(myNum, "int", {
+		configurable: false
+	});						// “开弓没有回头箭”
+	
+	Object.defineProperty(myNum, "int", {
+		writable: true
+	});						// TypeError, 之后的语句不会再执行
+	myNum.int = 25;		
+	console.log(myNum.int);
+```
+以上代码的逻辑应该是比较容易看懂的：myNum.int 的 emunerable 和 writable 特性被设为 false 之后，它既不可以被枚举、也不可以被赋值了。而它的 configurable 特性被设为 false 之后，它的 writable 也没法被改回为 true 了。
+
+另外请注意我们使用的方法的名字是“defineProperty”而不是“changeProperty”，说明这个方法是可以用来定义一个对象里没有的特征值的。尤其是这个特征值的后面三个属性不是缺省值的时候，这个方法还是挺好用的。比如
+
+```
+	'use strict'
+	let circle = {
+			r: 0
+	}
+	
+	Object.defineProperty(circle, "Pi", {
+		value: 3.1415926,
+		enumerable: false,
+	  	writable: false,
+	  	configurable: false
+	});
+	
+	circle.size = function() {
+		return this.Pi * (Math.pow(this.r, 2));
+	}
+	
+	circle.r = 15;
+	console.log(circle.size());	// 706.858335
+```
+这里我们给对象 circle 定义了一个不可更改、不可删除、不可枚举的常量 Pi，这些特点显然是我们需要的。严格来说，circle.r 的 configurable 也应该设为 false 而另外两个特性为 true，因为我们不希望使用者可以删除这个成员——没有半径的圆显然是没意义的。
+
+### 设定 accessor property 的特性
+
 
 ## 固化对象
 
