@@ -959,7 +959,7 @@ JavaScript 在`Object`上提供了一个方法`defineProperty()`来设定对象�
 ```
 以上代码的逻辑应该是比较容易看懂的：myNum.int 的 emunerable 和 writable 特性被设为 false 之后，它既不可以被枚举、也不可以被赋值了。而它的 configurable 特性被设为 false 之后，它的 writable 也没法被改回为 true 了。
 
-另外请注意我们使用的方法的名字是“defineProperty”而不是“changeProperty”，说明这个方法是可以用来定义一个对象里没有的特征值的。尤其是这个特征值的后面三个属性不是缺省值的时候，这个方法还是挺好用的。比如
+另外请注意我们使用的方法的名字是“defineProperty”而不是“changeProperty”，说明这个方法是可以用来给对象定义一个（新的）特征值。尤其是这个特征值的后面三个属性不是缺省值的时候，这个方法还是挺好用的。比如
 
 ```
 	'use strict'
@@ -984,10 +984,156 @@ JavaScript 在`Object`上提供了一个方法`defineProperty()`来设定对象�
 这里我们给对象 circle 定义了一个不可更改、不可删除、不可枚举的常量 Pi，这些特点显然是我们需要的。严格来说，circle.r 的 configurable 也应该设为 false 而另外两个特性为 true，因为我们不希望使用者可以删除这个成员——没有半径的圆显然是没意义的。
 
 ### 设定 accessor property 的特性
+我们前面已经说过，accessor property 没有 value 和 writable 特性。但是除了 configurable 和 enumerable 这两个特性之外，它还有另外两个特性：get 和 set——它们分别指向前面见过的`get something()`和`set something(val)`两个函数。对比前面章节用过的例子，我们来看一下如何使用它们：
 
+```
+	let myNum = {
+		_int: 0,
+	}
+	
+	// 下面语句中"int"就是特征值的名字，也就是上面代码中 "get int() {...}"里的那个 int
+	Object.defineProperty(myNum, "int", {	
+	// 这个 property descriptor 有四项：get, set, enumerable, configurable
+		get: function() {
+			console.log("myNum -> get int");
+			return this._int;
+		},
+		
+		set: function(val) {
+			console.log(`myNum -> set int: ${val}`);
+			this._int = Math.ceil(val);
+		},
+		
+		enumerable: true,
+		configurable: true
+	});
+	
+	Object.defineProperty(myNum, "sq", {	
+	// 这个 property descriptor 只有一项：get
+		get: function() {
+			console.log("myNum -> get sq");
+			return Math.pow(this._int, 2);
+		}
+	});
+	
+	myNum.int = 8.75;			// myNum -> set int: 8.75
+	console.log(myNum["int"]);		// myNum -> get int; 9
+	console.log(myNum.sq);		// myNum -> get sq; 81
+	
+```
+这两段代码的输出是一样的。⚠️ accessor property 的 configurable 和 enumerable 这两个特性缺省值是 false。比如在上一段代码里的 sq 这个特征值我们没有设定 configurable 和 enumerable。如果我们继续运行下面的代码就可以验证：
 
+```
+  console.log("sq" in myNum);		// true　
+  console.log(myNum.propertyIsEnumerable("sq"));	// false
+  delete myNum.sq;	// silently failed
+  console.log("sq" in myNum);	// true；sq 不能被删除
+```
+
+这种跟 data property 的不同性偶尔会造成困扰，大家使用的时候要留心。
+### 读取特性
+既然这些对象成员的这些特性可以设定，当然也应该可以读取。JavaScript 为此给`Object`提供了一个方法`Object.getOwnPropertyDescriptor()`。从名字就可以看出来，这个方法只能读取对象自有成员的特性。此方法的输入是你要查询的对象和成员的 key，输出是一个对象，其内容跟我们之前使用的 property descriptor 一样。它的使用很简单：
+
+```
+	let myNum = {
+		int: 100,
+	}
+	
+	let descriptor = Object.getOwnPropertyDescriptor(myNum, "int");
+	
+	console.log(JSON.stringify(descriptor));
+	// {"value":100,"writable":true,"enumerable":true,"configurable":true}
+```
+这里读取出来的值当然都是缺省值了。
 ## 固化对象
+JavaScript对象的使用是非常灵活的。在没有设定以上特性的情况下，你不仅可以随时改变其成员的取值，还可以改变其数据类型、增减成员（包括方法）等等。这种灵活性有时候可以让你的代码无比强大，有时候却会给你带来意想不到的麻烦。尤其如果你做好了一个对象给别人使用，使用者拿过来却任意涂改，结果就完全不可控了。比如他把你的对象的一个方法改成了指向另一个函数，或者干脆删除了这个方法，那其他用到这个对象、这个方法的人就完蛋了。在 C++ 和 Java 里显然这是不允许的，你只能继承父类并扩展成你自己定义的子类，而不能修改父类。JavaScript 显然也需要这样的“固化”能力。在 JavaScript 里我们可以在三个级别上固化一个对象。从松到严它们依次是：防止扩展、密封、冻结。下面我们依次来了解。
+### 防止扩展对象
+每个对象内部都有一个`[[Entensible]]`特征值。如果它的值为 false，这个对象就再也不能增加新的成员了。内部特征我们不能直接读写，但是 JavaScript 提供了这样的方法：`Object.isExtensible()`读取这个特征，`Object.preventExtensions()`将其设为 false（缺省为 true ）。⚠️ 并没有方法把它从 false 设回为 true，所以这也是一个“开弓没有回头箭”的事情。但是这样做是相当合理的，读者可以自行思考为什么。
 
+下面我们看看怎么使用这两个方法
+
+```
+	let myNum = {
+		int: 0
+	}
+	
+	console.log(Object.isExtensible(myNum));	// true
+  
+  	Object.preventExtensions(myNum);
+  	console.log(Object.isExtensible(myNum));	// false
+  
+  	myNum.getInt = function() { return this.int; }	// silently failed
+  	console.log(myNum.getInt());	// TypeError: myNum.getInt is not a function
+```
+以上代码可以看出来`Object.preventExtensions(myNum);`这句话之后，我们再也不能给`myNum`添加成员了。`myNum.getInt = function()...`这句在 strict 模式下会出错。
+### 密封对象
+密封一个对象比防止扩展对象更进一步：它还把所有对象成员的`configurable`特征值全部设为`false`。我们知道这个动作也是不可逆的，所以密封的对象也是不可以“解封”或者退化到仅仅是不可扩展的程度的。并且`configurable`为`false`的特征值是不看删除的，也就是说密封了的对象是不能增减成员的（但是还可以改变成员的赋值）。这样就不会出现你辛辛苦苦做好的一个对象，某些方法被使用者不小心删除了的情况。
+
+JavaScript 提供的密封对象和读取其密封状态的方法名字直截了当，分别是`Object.seal()`和`Object.isSealed()`。它们都只有一个输入参数，就是你关注的那个对象。下面是使用举例
+
+```
+ 	let myNum = {
+		int: 0
+	}
+	
+	console.log(Object.isExtensible(myNum));	// true
+  	console.log(Object.isSealed(myNum));	// false
+  
+  	Object.seal(myNum);
+  	console.log(Object.isExtensible(myNum));	// false
+  	console.log(Object.isSealed(myNum));		// true
+  
+  	myNum.getInt = function() { return this.int; }	// nothing happened
+  	console.log("getInt" in myNum);	// false
+  
+  	delete myNum.int;
+  	console.log("int" in myNum);	// true
+  	
+  	myNum.int = 10;
+  	console.log(myNum.int);			// 10
+```
+以上的代码比较通俗易懂，可以看出来在密封 myNum 对象之后，我们既不能增加也不是减少它的特征值了。但是 myNum.int 的值还是可以更改的。这个状态的对象跟 C++ 和 Java 的对象是最类似的。所以如果你希望自己构建的对象模拟 C++ 和 Java 对象的行为，你应该把它密封好。另外，再提醒读者一次，请使用 `use strict`——这样别人如果试图增减你的对象的特征值，他会得到报错而不是悄悄地调用失败。
+### 冻结对象
+冻结对象是比密封对象更进一步：这个动作不仅密封了对象，而且连对象成员的赋值也不能改变了。这样看上去很极端，你可能会怀疑这样的对象还有用吗？但是如果你需要提供一个库，这个库里有一组固定的方法封装在一个对象里，而这些方法（也可以包括一些常量）是不可以被使用者改变的，那你就应该冻结它。
+
+跟密封对象类似，对象的冻结是不可逆的，并且被冻结的对象一定都是被密封的，所以也都是不可扩展的。JavaScript 提供的冻结对象和读取对象冻结状态的方法也跟密封对象类似：`Object.freeze()`和`Object.isFrozen()`，它们的唯一输入参数也是你关注的对象。下面看看如何使用它们：
+
+
+```
+	let myCar = {
+	 	model: 'Honda Fit',
+		year: 2005,
+	    status: {
+	    	mileage: 92111,
+	      changeOil: false
+	    }
+	}
+		
+	console.log(Object.isExtensible(myCar));	// true
+	console.log(Object.isSealed(myCar));	// false
+	console.log(Object.isFrozen(myCar));	// false
+	  
+	Object.freeze(myCar);
+	console.log(Object.isExtensible(myCar));	// false
+	console.log(Object.isSealed(myCar));		// true
+	console.log(Object.isFrozen(myCar));	// true
+	  
+	myCar.getYear = function() { return this.year; }	// nothing happened
+	console.log("getYear" in myCar);	// false
+	  
+	delete myCar.model;
+	console.log("model" in myCar);	// true
+	  
+	myCar.year = 2007;
+	console.log(myCar.year);		// 2005
+	  
+	myCar.status.mileage = 92555;
+	console.log(myCar.status.mileage);	// 92555
+```
+ 
+在这段代码里我们首先定义了 myCar 对象，它的最后一个成员也是个对象 status。在被冻结之前 myCar 是可以扩展的、未密封、未冻结。一旦被冻结，它也是密封的和不可扩展的了。我们既不能删除myCar.model 成员也不能改变 myCar.year 的值了。
+
+最后两条两句显示，我们还是可以改变它成员对象所包含的特征值。所以这种冻结不是一种 deep frozen。这是因为我们冻结的是 myCar.status 的值，也就是说 myCar.status 不能再指向任何其它对象或者持有基础数据类型的值了，但是它指向的对象还是个普通的对象，还可以读写、增减，除非我们也进行这样的操作：`Object.freeze(myCar.status);`.
 # 5. 构建函数（Constructor）和原型（Prototype）
 
 # 6. 继承（Inheritance）
