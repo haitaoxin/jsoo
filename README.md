@@ -959,7 +959,7 @@ JavaScript 在`Object`上提供了一个方法`defineProperty()`来设定对象�
 ```
 以上代码的逻辑应该是比较容易看懂的：myNum.int 的 emunerable 和 writable 特性被设为 false 之后，它既不可以被枚举、也不可以被赋值了。而它的 configurable 特性被设为 false 之后，它的 writable 也没法被改回为 true 了。
 
-另外请注意我们使用的方法的名字是“defineProperty”而不是“changeProperty”，说明这个方法是可以用来给对象定义一个（新的）特征值。尤其是这个特征值的后面三个属性不是缺省值的时候，这个方法还是挺好用的。比如
+另外请注意我们使用的方法的名字是“defineProperty”而不是“changeProperty”，说明这个方法是可以用来给对象定义一个新的特征值。尤其是这个特征值的后面三个属性不是缺省值的时候，这个方法还是挺好用的。比如
 
 ```
 	'use strict'
@@ -1135,6 +1135,128 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 
 最后两条两句显示，我们还是可以改变它成员对象所包含的特征值。所以这种冻结不是一种 deep frozen。这是因为我们冻结的是 myCar.status 的值，也就是说 myCar.status 不能再指向任何其它对象或者持有基础数据类型的值了，但是它指向的对象还是个普通的对象，还可以读写、增减，除非我们也进行这样的操作：`Object.freeze(myCar.status);`.
 # 5. 构建函数（Constructor）和原型（Prototype）
+我刚开始接触 JavaScript 的时候，有个问题困扰了我一段时间：JavaScript 对象的概念不难理解，但是怎么会没有类 （ class ）呢？因为以前有 C++ 和 Java 的经验，我们已经很熟悉面向对象编程的套路：定义 interface ➡️ 填充 members 做成类 ➡️ 实现此类的一个或者多个对象。如果没有类，难道是从一个对象复制另一个对象？（⚠️ ES6 终于引入了类，不过此类不是彼类，跟 C++ 或者 Java 的类不完全是一回事。待我们到第七章再分解。）
+
+我们知道如果有了一个对象，可以把它赋值给另一个变量，也可以用`Object.create()`创建一个新的对象。但是它们的结果都不一定是你想要的。比如看个简单的例子
+
+```
+ 	let myCar = {
+		year: 2005
+	}
+
+	let myCar1 = myCar;
+	let myCar2 = Object.create(myCar);
+  	
+
+	console.log(myCar1.year);		// 2005
+  	console.log(myCar2.year);		// 2005
+	myCar.year = 2009;
+	console.log(myCar1.year);		// 2009
+  	console.log(myCar2.year);		// 2009
+```
+在上面的例子里，不论是变量赋值的 myCar1，还是新创建的对象 myCar2，它们的 .year 特征值都跟着 myCar 的改变而改变。这显然和 C++ 里由类生成的对象不一样，也让新生成的对象不好用了。myCar1 的原因容易理解，因为它本身就仅仅是指向同一个对象的另一个变量而已；myCar2 的行为是由`Object.create()`这个方法决定的，本章后面我们会讲到。
+
+说完不能用的，咱们来讲能用的并且应该用的方法。本章先讲使用构建函数来创建类似于 C++ 和 Java 那样对象的方法，这是其它方法的基础。
+## 构建函数（constructor）
+有 C++ 基础的读者都知道，在 C++ 里构建函数是一个类里跟类同名的那个函数，是每个对象被创建是第一个自动被执行的。JavaScript 的构建函数虽然名字一样，但完全是另外一个概念。你要先丢掉 C++ 构建函数的概念在你脑海里的深深烙印。
+
+从字面上来看，JavaScript 的构建函数其实名字更贴切：它就是那种专门用来构建对象的函数。所以，JavaScript 里你需要重用的对象，是用构建函数定义和实现——它的作用跟 C++ 或者 Java 的类是基本相同的。
+
+其实我们已经见过几个标准内建的构建函数，比如`Object()`，`Array()`和`Function()`。你回忆一下，调用它们返回的就是你要的对象。⚠️ 构建函数传统上都是用大写字母开头（而其它函数、方法用小写）。虽然这不是语法限制的，但是已经约定俗成并且是有意义的——别人一目了然就知道你的函数是个构建函数，也就知道不应该像其它函数那样调用它了。所以你不想让别人都不带你玩儿，就请遵守这个惯例。
+
+构建函数的样子（除了名字第一个字母大写）跟其它函数没什么区别，对其内容也没什么特殊要求。比如最简单的例子
+
+```
+	function Person() {
+		// 暂时内容为空
+	}
+```
+我们的第一个构建函数就做好了！当然这个函数如果你就像以前一样调用：`Person();`，什么效果也没有、返回值就是个 `undefined`。把这个函数当作构建函数调用是有特殊语法的，必须使用关键字`new`。比如
+
+```
+	// 接上面的代码
+	var person1 = new Person();
+	var person2 = new Person();
+	console.log(typeof person1);		// object; 说明构建函数返回了一个对象
+	console.log(person1 instanceof Person);	// true; 证明 person1 是属于 Person 这一“类型”的一个实现
+	console.log(person1 === person2);		// false; 说明两个变量不是同一个对象
+```
+
+`new`这个关键字的意思也很容易理解，就是要“新建”。新建什么呢？当然是后面跟着的那个构建函数返回的对象了。新建好的对象除了可以用 `instanceof` 来确认它的归属外，还可以检查它的 constructor。⚠️ 这个 constructor 是每个对象都有的一个特征值，不是构建函数。此特征值就指向此对象的构建函数，所以它们叫同一个名字也有道理。比如我们用以前演示过的代码：
+
+```
+	console.log(person1 instanceof Object);	// true; 因为 person1 也是一个 Object
+	console.log(person1.constructor === Person);	// true; 精确定为对象的构建函数
+  	console.log(person1.constructor === Object);	// false; person1并不是由 Object() 构建出来的
+  	
+  	var fakePerson = Person();		// 没有 new 也可以运行...
+  	console.log(fakePerson instanceof Object);	// false; 但是结果并不是我们想要的对象
+```
+最后两句显示如果你忘了使用 new 关键字，程序不会报错，这样的 bug 最难发现。但是如果构建函数的第一个字母为大写，这个错误就更容易被肉眼或者静态代码分析的程序发现了。
+### 构建函数的输入参数和返回值
+构建函数跟其它函数一样，也可以有一个或者多个输入参数。当你用它构建对象时，通常就会输入这个对象所具有的参数，比如我们下面要看到的 "name"。构建函数内部当然也可以像其它函数一样使用这些输入参数。
+
+构建函数的输出需要注意（这里都是指被当作构建函数调用、也就是使用`new`关键字的情况下）有两种情况：
+
+* 如果此函数最后执行了返回语句`return`并且返回值是个对象，那这个对象就是返回值
+* 如果此函数没有执行`return`或者`return`跟的是个基础数据类型，那就返回此函数创建的对象
+
+第一种情况容易理解（但是比较少见）；第二种情况所谓“此函数创建的对象”到底是哪个对象？或者更确切地说，这个对象是个什么样子、有什么特征值呢？这是我们下一节要回答的问题。
+### 构建对象的成员
+我们知道函数也是对象，所以它也有自己的特征值。在其内部，你可以用`this.key = value;`来定义一个新的特征值。在构建函数里这样被定义的特征值，不论是基础数据类型还是函数、或者其它对象，就都是其新创建对象的特征值了；如果这个特征值恰好是个函数，那它就是新对象的方法。下面我们看个例子
+
+```
+	function Person(name) {
+		this.name = name;
+		let food = "meat and vegetable";
+		this.sayName = function() {
+			console.log(`${this.name} eats ${food}`);
+		}
+	}
+	
+	let jack = new Person('Jack');
+	let jenny = new Person('Jenny');
+	
+	jack.sayName();		// Jack eats meat and vegetable
+	jenny.sayName();		// Jenny eats meat and vegetable
+		  
+  	console.log(p1.name);	// Jack
+  	console.log(p1.food);	// undefined
+
+```
+跟上一版比，这一版的`Person`构建函数更“高级”了：它现在接受一个输入参数，“name"，并且把它赋予新创建对象的 ”name" 成员上。新对象还有一个方法叫 "sayName"，你可以在新对象建好后调用。而且我们构建的两个对象 jack 和 jenny 显然不是同一个。现在这样的对象就很像是我们在 C++ 里用类实现的对象了。
+
+⚠️ 从代码的最后一句我们可以看到，如果你在构建函数内部定义了一个变量（ food ）而没有前缀`this.`，那它就是个构建函数范围内的变量而已；它可以被同命名空间内的代码使用：`console.log(`${this.name} eats ${food}`);`。但是它不是新构建对象的一个特征值，你也不能在构建函数外部读写它。从这个角度来说，它有些类似私有成员。
+
+除了 data property，我们还可以在构建函数里定义 accessor property，也可以设定对象成员的特性。比如
+
+```
+	function Person(name) {
+		Object.defineProperty(this, "name", { // 这个 “name" 是对象特征值的 key
+			get: function() {
+				return name;		// 这个 name 就是输入参数的那个 name
+			},
+			set: function(newName) {
+				name = newName;	// 这个 name 还是输入参数的那个 name
+			},
+			enumerable: true,
+			configurable: true
+		});
+		
+		this.sayName = function() {
+			console.log(this.name);		// 这个 name 是对象特征值的 key
+		};
+	}
+```
+这段代码里“name”比较多（JavaScript 代码里输入参数跟函数内部变量名相同的情况很多），大家不要被绕晕。第二行的“name”是我们给构建的对象添加的特征值的key（所以它必须是个字符串）；第四行的 name 就是输入参数 name ——这个时候它在函数内部是个变量了，跟上一段代码里的变量 food 没什么不同，所以它也可以被当作一个“私有成员”在构建函数内部使用了。最后在 sayName() 方法里我们读取 this.name，那当然是对象的特征值才可以这么使用——这句话会调用特征值 name 的 getter，返回的恰好是内部变量 name 的值。如果读完我的解释你还晕，那请再读一遍，直到读懂。
+## 原型（Prototypes）
+但是以上的构建函数定义都有一个大问题。我们来看代码：
+
+```
+	// 接上面的代码
+	console.log(jack.sayName === jenny.sayName);	// false
+```
+这句话的运行结果为 false，说明这两个方法不是同一个，也就是说同样的函数在内存里放了两份。而每个函数的存储除了我们写的语句，还有它自带各种特征值，并不是小到可以忽略不计的。假设我们在代码里定义一个“学生”构建函数，它返回的对象有十个方法。那我们创建1000个“学生”对象之后，这十个方法就被在内存里重复存储了1000次！在显然是不能接受的。我们需要的是 C++ 那种“独立数据、共享方法”的对象。
 
 # 6. 继承（Inheritance）
 
