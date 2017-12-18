@@ -1032,7 +1032,7 @@ JavaScript 在`Object`上提供了一个方法`defineProperty()`来设定对象�
 
 这种跟 data property 的不同性偶尔会造成困扰，大家使用的时候要留心。
 ### 读取特性
-既然这些对象成员的这些特性可以设定，当然也应该可以读取。JavaScript 为此给`Object`提供了一个方法`Object.getOwnPropertyDescriptor()`。从名字就可以看出来，这个方法只能读取对象自有成员的特性。此方法的输入是你要查询的对象和成员的 key，输出是一个对象，其内容跟我们之前使用的 property descriptor 一样。它的使用很简单：
+既然对象成员的这些特性可以设定，当然也应该可以读取。JavaScript 为此在`Object`上提供了一个方法`Object.getOwnPropertyDescriptor()`。从名字就可以看出来，这个方法只能读取对象自有成员的特性。此方法的输入是你要查询的对象和成员的 key，输出是一个对象，其内容跟我们之前使用的 property descriptor 一样。它的使用很简单：
 
 ```
 	let myNum = {
@@ -1256,7 +1256,33 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 	// 接上面的代码
 	console.log(jack.sayName === jenny.sayName);	// false
 ```
-这句话的运行结果为 false，说明这两个方法不是同一个，也就是说同样的函数在内存里放了两份。而每个函数的存储除了我们写的语句，还有它自带各种特征值，并不是小到可以忽略不计的。假设我们在代码里定义一个“学生”构建函数，它返回的对象有十个方法。那我们创建1000个“学生”对象之后，这十个方法就被在内存里重复存储了1000次！在显然是不能接受的。我们需要的是 C++ 那种“独立数据、共享方法”的对象。
+这句话的运行结果为 false，说明这两个方法不是同一个，也就是说同样的函数在内存里放了两份。而每个函数的存储除了我们写的语句，还有它自带各种特征值，并不是小到可以忽略不计的。假设我们在代码里定义一个“学生”构建函数，它返回的对象有十个方法。那我们创建1000个“学生”对象之后，这十个方法就被在内存里重复存储了1000次！在显然是不能接受的。我们需要的是 C++ 那种“数据独立、方法共享”的对象。而原型就是让我们定义那些共享的对象成员的途径。Zakas 把原型比喻成菜谱也很形象：比如你要做个西红柿炒鸡蛋，怎么做这个菜的方法就是原型，它可以是写在菜谱上、人人都读的同一篇文章，但不是具体的食物；你用你的西红柿和鸡蛋做你的菜，别人做别人的。你们共享同一个菜谱，但是各有各的鸡蛋。
+
+其实我们前面已经很多次使用作为原型的方法了。比如`defineOwnProperty()`这个方法就是 JavaScript 定义在 `Object` 对象上的原型，并且可以被任何从`Object`继承而来的对象共享和使用。我们用代码来看一下更清楚
+
+```
+	let book1 = {
+		title: "JavaScript Basic"
+	}
+
+	console.log("title" in book1);	// true
+	console.log(book1.hasOwnProperty("title"));	// true; book1 可以使用 hasOwnProperty 方法
+	console.log("hasOwnProperty" in book1);	// true; hasOwnProperty 是 book1 的特征值...
+	console.log(book1.hasOwnProperty("hasOwnProperty")); 	// false; 但 hasOwnProperty 不是 book1 自有的特征值
+	console.log(Object.hasOwnProperty("hasOwnProperty"));	// false; hasOwnProperty 甚至不是 Object 自有的特征值
+	console.log(Object.prototype.hasOwnProperty("hasOwnProperty"));	// true; 这下才找到 hasOwnProperty 到底是定义在哪里的
+	
+	let book2 = new Object({"title": "JavaScript Advanced"});
+	
+	console.log(book1.hasOwnProperty === book2.hasOwnProperty);	// true; 可以看出来两个不同的对象共享同一个函数
+```
+仔细阅读以上的代码，你会发现：
+
+* hasOwnProperty 是 book1 的一个方法，book1 可以调用它
+* 但是它不是 book1 自有的一个方法；它甚至也不是 book1 的构建函数，也就是 Object 的一个自有特征值
+* Object 有一个 key 为 "prototype" 的特征值，它是一个对象；hasOwnProperty 就是它的自有特征值。换句话说，追根溯源 hasOwnProperty 最初是定义在 Object.prototype 这个对象上的
+* book2 的定义更清楚地让我们看到一个普通对象的构建函数就是 `Object()`，而 book1 的定义只是 book2 定义更常见的写法而已。
+* 因为 book1 和 book2 都是从 `Object()` 构建出来的，所以它们共享 `Object.prototype`提供的方法（hasOwnProperty），不需要每个对象自己存储一遍。
 
 # 6. 继承（Inheritance）
 
