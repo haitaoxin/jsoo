@@ -1158,11 +1158,13 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 
 说完不能用的，咱们来讲能用的并且应该用的方法。本章先讲使用构建函数来创建类似于 C++ 和 Java 那样对象的方法，这是其它方法的基础。
 ## 构建函数（constructor）
-有 C++ 基础的读者都知道，在 C++ 里构建函数是一个类里跟类同名的那个函数，是每个对象被创建是第一个自动被执行的。JavaScript 的构建函数虽然名字一样，但完全是另外一个概念。你要先丢掉 C++ 构建函数的概念在你脑海里的深深烙印。
+有 C++ 基础的读者都知道，在 C++ 里构建函数是一个类里跟类同名的那个函数，每个对象被创建时首先被自动执行。JavaScript 的构建函数虽然名字一样，但完全是另外一个概念。你要先丢掉 C++ 构建函数的概念在你脑海里的深深烙印，如果你没学过 C++ 也许更好。
 
-从字面上来看，JavaScript 的构建函数其实名字更贴切：它就是那种专门用来构建对象的函数。所以，JavaScript 里你需要重用的对象，是用构建函数定义和实现——它的作用跟 C++ 或者 Java 的类是基本相同的。
+从字面上来看，JavaScript 的构建函数其实名字更贴切：**它就是那种专门用来构建对象的函数**。所以，JavaScript 里你需要重用的对象，是用构建函数定义和实现的——它的作用跟 C++ 或者 Java 的类是基本相同的。
 
-其实我们已经见过几个标准内建的构建函数，比如`Object()`，`Array()`和`Function()`。你回忆一下，调用它们返回的就是你要的对象。⚠️ 构建函数传统上都是用大写字母开头（而其它函数、方法用小写）。虽然这不是语法限制的，但是已经约定俗成并且是有意义的——别人一目了然就知道你的函数是个构建函数，也就知道不应该像其它函数那样调用它了。所以你不想让别人都不带你玩儿，就请遵守这个惯例。
+其实我们已经见过几个标准内建的构建函数，比如`Object()`，`Array()`和`Function()`。你回忆一下，调用它们返回的就是你要的对象。
+
+⚠️ 构建函数传统上都是用大写字母开头（而其它函数、方法用小写）。虽然这不是语法限制的，但是已经约定俗成并且是有意义的——别人一目了然就知道你的函数是个构建函数，也就知道不应该像其它函数那样调用它了。所以你不想让别人都不带你玩儿，就请遵守这个惯例。
 
 构建函数的样子（除了名字第一个字母大写）跟其它函数没什么区别，对其内容也没什么特殊要求。比如最简单的例子
 
@@ -1349,8 +1351,176 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 	console.log(book2.toString());	// [object Object]
 	console.log(isPrototypeProperty(book2, "toString")); // true; toString 恢复为原型方法
 ```
-### 给构建函数添加原型
+### 给构建函数添加原型特征值
+我们讲了半天原型是什么和怎么使用它，现在终于要开始定义原型了。如果你已经真正理解了什么是原型，这个工作其实一点儿都不复杂。我们直接看代码：
 
+```
+	// 先定义一个最简单的构建函数
+	function Person(name) {
+		this.name = name;	// 唯一的自有特征值被赋予输入参数的值
+	}
+	
+	// 接着我们来检查一下这个构建函数里已经有什么了
+	console.log("name" in Person);	// true; "name"显然是 Person 的特征值
+	console.log("prototype" in Person);	// true; JavaScript 引擎已经帮我们在 Person 上加好了 "prototype" 这个特征值
+	console.log(typeof Person.prototype);	// object; "prototype" 就是个普通的对象
+	
+	// 现在我们往这个 Person.prototype 对象里添加一个成员，也就是一个原型方法
+	Person.prototype.sayName = function() {
+		console.log(`My name is ${this.name}`);
+	}
+	
+	// 创建两个对象试试看
+	let p1 = new Person("Jack");
+	let p2 = new Person("Jenny");
+	
+	p1.sayName();		// My name is Jack
+	p2.sayName();		// My name is Jenny
+	
+	// 确认一下 sayName() 真的是原型特征值
+	console.log(p1.hasOwnProperty("sayName"));	// false; 不是自有特征值，必定是原型特征值
+
+```
+简单来说，在你自己的构建函数里添加原型特征值分三步：
+
+1. 声明构建函数（并且把其创建对象需要的自有特征值定义在函数体内部，比如上面的 `this.name`）。JavaScript 会自动给这个构建函数添加一个叫做 "prototype" 的对象
+2. 给上面那个 "prototype" 对象（而不是构建函数本身）添加你需要的方法，也就是 `Person.prototype.sayName = function() {...}` 这一步。这句赋值语句跟其它对象添加特征值没任何区别。
+3. 用 "new" 关键字创建新的对象，这些新的对象自然就可以使用构建函数的所有自有特征值和原型特征值了。
+
+以上的第二步虽然并不一定非要在声明构建函数之后立刻执行，我还是建议你尽量这样做。否则不仅你自己代码的可读性会变得很差，而且构建出来的对象在什么时候可以使用哪些原型方法也很头疼。偶尔你会见到有人喜欢把别人定义好的构建函数上添加方法，比如
+
+```
+	console.log("double" in String.prototype);	// false; String 没有自带叫做 double 的原型方法
+	
+	// 我们给 String 添加一个原型方法 double，它就是把自己重复一遍
+	String.prototype.double = function{ return this.repeat(2); };
+	
+	let a = "test";
+	console.log(a.double());	// testtest; double 已经可以使用啦
+```
+
+JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建函数是否已经有了同名的方法、不要覆盖已有的方法——你对构建函数的这种改动不仅影响到你创建的对象，也影响到别人创建的对象！老手有时候用这个办法制作 polyfill，还是很方便的。
+
+另外，我们前面已经提过，原型特征值不仅仅可以是方法，也可以是数据。但是这样的数据如果是引用数据类型（比如数组），那它是被所有此构建函数创建的对象共享的，所以要谨慎使用。比如对于上面 Person 那个构建函数我们再添加两个原型特征值：
+
+```
+	Person.prototype.city = "";
+	Person.prototype.schools = [];
+	
+	p1.city = "铁岭";
+	p2.city = "沈阳";
+	
+	console.log(p1.city);	// 铁岭
+	console.log(p2.city);	// 沈阳
+	
+	p1.schools.push("铁岭一小");
+	p2.schools.push("沈阳二校");
+	
+	console.log(p1.schools);	// ["铁岭一小", "沈阳二校"]
+	console.log(p2.schools);	// ["铁岭一小", "沈阳二校"]
+```
+
+`city` 因为是个基础数据类型，所以每个对象的数据结构里存的就是自己得到的赋值。而`schools`是引用数据类型，p1、p2 的数据结构里存的是指向同一个数组的指针。所以你增减 p1 的 schools，p2 的也跟着变了；反之亦然。解决方法是在 Person 的函数体内部增加类似的语句： `this.schools = [];`。
+###  定义构建函数的原型
+我们在定义自己的构建函数的时候，它需要的原型方法往往有很多个。我们当然可以像之前的例子里`Person.prototype.sayName = function() {...}`那样一个一个添加。但是我们也可以把所有要定义的原型特征值放到一个对象里一下子赋值给构建函数的原型。比如
+
+```
+	function Person(name) {
+		this.name = name;	// 唯一的自有特征值被赋予输入参数的值
+	}
+	
+	Person.prototype = {
+		sayName: function() {
+			console.log(`My name is ${this.name}`);
+		},
+		
+		toString: function() {
+			return `[Person ${this.name}]`;
+		}
+	} 
+```
+这样的写法要求你把所有的原型特征值都放在一起，这往往是个好习惯。但是上面的代码有一段隐藏的问题：每个对象被建立的时候，JavaScript 都悄悄地给它内建了一个 "constructor" 成员。构建函数的原型对象的 constructor 原本是指向这个构建函数的。在上面对 Person.prototype 赋值语句里，我们不是给已有的 Person.prototype 添加方法，而是把它指向一个全新的对象，也就是等号右边这个对象——因为这个新的对象就是个普通的对象，它的 constructor 被指向了 `Object`。这样会导致一些混乱，比如
+
+```
+	// 接上面的代码
+	let p1 = new Person("Jack");
+	
+	p1.sayName();		// My name is Jack; 没什么问题
+	console.log(p1.toString());	// [Person Jack]; 也OK
+	console.log(p1.constructor === Person);	// false; 这就不对了
+	
+	console.log(Person.prototype.constructor === Object);	// true
+	console.log(p1.constructor === Object);	// true
+```
+
+解决的方法也不难，直接在给 Person.prototype 赋值的对象里把 constructor 设定好（通常是放在第一句，这样就不容易忘了）：
+
+
+```
+	function Person(name) {
+		this.name = name;	// 唯一的自有特征值被赋予输入参数的值
+	}
+	
+	Person.prototype = {
+		constructor: Person,	// 首先设定 constructor
+		
+		sayName: function() {
+			console.log(`My name is ${this.name}`);
+		},
+		
+		toString: function() {
+			return `[Person ${this.name}]`;
+		}
+	};
+	
+	let p1 = new Person("Jack");
+	
+	p1.sayName();		// My name is Jack
+	console.log(p1.toString());	// [Person Jack]
+	console.log(p1.constructor === Person);	// true；一切正常
+```
+
+趁这个机会，我们把构建函数、其原型和其构建的对象的是如何联系在一起的理一理。这三个对象，套到上边的代码里分别是 Person, Person.prototype, 和 p1。它们之间是靠每个对象的 [[Prototype]]、constructor、或 prototype 这三个成员特征值关联起来的：
+
+* Person 的 prototype 特征值指向 Person.prototype 对象
+* Person.prototype 的 constructor 特征值指向 Person
+* p1 的 [[Prototype]] 内部特征值指向 Person.prototype；p1 的 constructor 特征值指向 Person
+
+弄清楚了这些关系，我们在设计构建函数及其原型，以及使用构建函数的时候就要时时提醒自己，这些联系是不能打乱的。否则出了 bug 很难查。
+
+最后提醒一下，上面代码这样对构建函数的原型赋值之后，如果需要，还是可以随时加减原型特征值的。比如
+
+```
+	// 接上面的代码
+	Person.prototype.sayHi = function(yourName) {
+		console.log(`Hi ${yourName}, my name is ${this.name}`);
+	}
+	
+	p1.sayHi("Jenny");	// Hi Jenny, my name is Jack
+```
+### 标准内建对象的原型
+所有 JavaScript 标准的内建对象都自带很多方法一方便我们使用（没有这些方法，那标准对象也没存在的意义了）。我们前面已经提到，这些方法基本都是原型方法。而且我们还给 String 添加了一个 double 原型方法。这样的行为在其它语言里几乎都是不允许的，所以对很多读者来说还比较陌生。下面咱们再看一个例子。
+
+数组 Array 也是我们常用的标准对象。当然它也提供了很多现成的方法。但是对数组的操作可以是无穷无尽的，这些方法不可能全部支持。比如你的程序在处理数组类型的数据时（假设都是数值），需要经常计算所有成员的平均值，那你就可以定义这样一个方法，然后很方便的调用
+
+```
+	if (!("average" in Array.prototype)) {	// 先检查一下没有这个原型方法
+		Array.prototype.average = function() {
+	  	if (this.length === 0) {
+	    	return NaN;	// 如果数组为空则返回 NaN；严格来讲还应该检查每项是否为有效数值
+	    } else {
+	    	return this.reduce((first, second) => first + second) / this.length;
+	    }
+	  }
+	}
+	
+	let arr = [6, 8, 19];
+	console.log(arr.average());	// 11
+	
+	let arr0 = [];
+	console.log(arr0.average());	// NaN
+```
+⚠️再强调一遍：给标准对象添加一个原型方法可以谨慎地使用，而覆盖一个已有的原型方法是非常危险的！
 # 6. 继承（Inheritance）
 
 # 7. 类（Class）
