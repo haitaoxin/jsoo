@@ -1258,7 +1258,7 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 ```
 这句话的运行结果为 false，说明这两个方法不是同一个，也就是说同样的函数在内存里放了两份。而每个函数的存储除了我们写的语句，还有它自带各种特征值，并不是小到可以忽略不计的。假设我们在代码里定义一个“学生”构建函数，它返回的对象有十个方法。那我们创建1000个“学生”对象之后，这十个方法就被在内存里重复存储了1000次！在显然是不能接受的。我们需要的是 C++ 那种“数据独立、方法共享”的对象。而原型就是让我们定义那些共享的对象成员的途径。Zakas 把原型比喻成菜谱也很形象：比如你要做个西红柿炒鸡蛋，怎么做这个菜的方法就是原型，它可以是写在菜谱上、人人都读的同一篇文章，但不是具体的食物；你用你的西红柿和鸡蛋做你的菜，别人做别人的。你们共享同一个菜谱，但是各有各的鸡蛋。
 
-其实我们前面已经很多次使用作为原型的方法了。比如`defineOwnProperty()`这个方法就是 JavaScript 定义在 `Object` 对象上的原型，并且可以被任何从`Object`继承而来的对象共享和使用。我们用代码来看一下更清楚
+其实我们前面已经很多次使用作为原型的方法了。比如`defineOwnProperty()`这个方法就是定义在 `Object` 对象的原型上的，并且可以被任何从`Object`继承而来的对象共享和使用。我们用代码来看一下更清楚
 
 ```
 	let book1 = {
@@ -1279,10 +1279,77 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 仔细阅读以上的代码，你会发现：
 
 * hasOwnProperty 是 book1 的一个方法，book1 可以调用它
-* 但是它不是 book1 自有的一个方法；它甚至也不是 book1 的构建函数，也就是 Object 的一个自有特征值
-* Object 有一个 key 为 "prototype" 的特征值，它是一个对象；hasOwnProperty 就是它的自有特征值。换句话说，追根溯源 hasOwnProperty 最初是定义在 Object.prototype 这个对象上的
-* book2 的定义更清楚地让我们看到一个普通对象的构建函数就是 `Object()`，而 book1 的定义只是 book2 定义更常见的写法而已。
+* 但是它不是 book1 的自有方法；它甚至也不是 book1 的构建函数、也就是 `Object` 的一个自有特征值
+* `Object` 有一个 key 为 "prototype" 的特征值，它指向一个对象；`hasOwnProperty` 就是这个对象的自有特征值。换句话说，追根溯源， `hasOwnProperty` 最初是定义在 `Object.prototype` 这个对象上的
+* book2 的定义更清楚地让我们看到一个普通对象的构建函数就是 `Object()`，而 book1 的定义方法只是`new Object(...)`构建函数更常见的写法而已。
 * 因为 book1 和 book2 都是从 `Object()` 构建出来的，所以它们共享 `Object.prototype`提供的方法（hasOwnProperty），不需要每个对象自己存储一遍。
+
+上面的例子和解释已经说明，像`hasOwnProperty`这种原型特征值（ prototype property）就是我们需要的同一类对象共享的方法，它的行为跟 C++ 类的方法基本是一样的。**而原型（prototype）也是一个对象，它的成员就是所有的原型特征值。**也可以说，原型这个对象就是为了容纳原型特征值而存在的。既然原型是个对象，它里面当然既可以有函数成员，也可以有其它数据成员。但是既然面向对象的原理就是要求“数据独立、方法共享”，显然原型里主要应该是方法来。如果你一定放数据成员在里面，你要非常小心：任何一个使用它的对象都可能把共享的数值改变了（除非你把它的 writable 设为 false）而影响其它对象。
+
+因为这是 JavaScript 面向对象编程里非常重要的概念，我希望大家一定要理解清楚。所以我们回忆一下以前讲过的内容，换个角度再理一遍。
+
+每个对象的特征值都分为两类：自有特征值（ own property ）和原型特征值（ prototype property ）。一个对象是否有某个特征值可以用操作符`in`来检查；此特征值是否为自有特征值可以用方法`hasOwnProperty`来检查；但是 JavaScript 里没有一个方法来检查一个特征值是不是一个对象的原型特征值。因为我们知道一个特征值如果不是自有特征值就一定是原型特征值，所以我们可以容易地自己写这样一个函数：
+
+```
+	// 接上面的代码
+	function isPrototypeProperty(object, key) {
+		return key in object && !object.hasOwnProperty(key);
+	}
+	
+	console.log(isPrototypeProperty(book1, "title"));	// false; title 是自有特征值
+	console.log(isPrototypeProperty(book1, "hasOwnProperty"));	// true; hasOwnProperty 是原型特征值
+```
+仔细读懂上面这段小程序，你就会对特征值、自有特征值、原型特征值三者的关系很清楚了。
+### `[[Prototype]]`特征值
+我们已经看了很多使用原型特征值方法的例子（所有标准内建对象的方法都是原型方法，我还没见过例外）。那么原型特征值到底是怎么来的、怎么使用呢？我们自己的构建函数里怎么定义它呢？我们本小节先回答第一个问题，后面章节会重点讨论第二个。
+
+内部特征值我们已经见过几个。JavaScript 还给每个对象定义了一个内部特征值`[[Prototype]]`。它是个引用数据类型，指向此对象使用的原型（ prototype ）。当你使用构建函数创建一个新的对象的时候（比如上面的 book1 和 book2），**新产生的对象就自动地被指向了构建函数的 `prototype`对象——这个步骤是 JavaScript 引擎悄悄地完成的，你无法也不需要干预**。但是 JavaScript 提供了一个`Object.getPrototypeOf()`方法让你得到一个对象的原型：
+
+```
+	// 接上面的代码
+	var prototype1 = Object.getPrototypeOf(book1);
+	var prototype2 = Object.getPrototypeOf(book2);
+	
+	console.log(prototype1 === Object.prototype);	// true; book1 的原型指向构建函数的 prototype 特征值
+	console.log(prototype1 === prototype2);	// true; 两个对象的原型指向同一个对象
+```
+
+还有一个更简单的办法得到对象的原型。除了 Internet Explorer 之外的三大主流浏览器 Chrome, Firefox, 和 Safari 的 JavaScript 引擎（当然也包括 Node.js）都给对象添加了一个`__proto__`特征值（"proto"前后都是双下划线），它就指向此对象的原型；换句话说，它的值跟`Object.getPrototypeOf()`的结果是一样的。本来这只是浏览器厂商的自发行为，但是 TC39 （负责ECMAScript标准化的技术委员会）认为不如把它标准化，这样会避免很多兼容性问题，所以就在 ES6 里添加了这个标准。它的使用很简单：
+
+```
+	// 接上面的代码
+	console.log(book2.__proto__ === Object.prototype);	// true; book2.__proto__指向 book2 的构建函数的 “prototype” 特征值对象
+```
+
+### 原型方法的重载
+我们已经知道原型对象里的方法（也就是函数类型的原型特征值）是被多个对象共享使用的。如果其中一个对象需要定义同名方法来实现自己的与众不同的行为，也是允许的。比如
+
+
+```
+	// 接上面的代码
+	console.log(book2.toString());	// [object Object]
+	console.log(isPrototypeProperty(book2, "toString")); // true; toString 显然也是 book2 从 Object 那里继承过来的原型方法
+  
+ 	book2.toString = function() {	// 给 book2 定义新的 toString() 方法
+  		return "Book: " + this.title;
+  	}
+  
+ 	console.log(book2.toString());	// Book: JavaScript Advanced
+	console.log(isPrototypeProperty(book2, "toString"));	// false; 现在的 toString 已经不是原型特征值了！
+```
+给 book2 重载 toString() 方法很简单，跟定义其它方法没任何不同；JavaScript 引擎也不会因为你使用一个原型对象里已经有的名字而出错。然后你就可以愉快地使用自己定义的方法了！
+
+这段代码还揭示了一个重要的事实：**JavaScript 寻找对象特征值的次序是先自有再原型。** `book2.toString()`第一次被调用的时候，JavaScript 引擎在 book2 的自有特征值里找不到这个成员，就去它的 prototype 成员指向的对象（也就是它的构建函数 `Object()`的 prototype 特征值）里找，结果找到了就执行（再找不到还会逐级上溯——这是我们在下一章要讲的内容）；如果一直都没找到，就是报错 "TypeError: object.method is not a function"。相比之下，`book2.toString()`第二次被调用的时候，JavaScript 引擎在 book2 的自有特征值里找到了这个方法并且执行了，当然也就没原型神马事儿了。
+
+这时候如果你又想恢复使用原型方法（希望你不需要这么折腾），你可以删除自己定义的自有方法：
+
+```
+	// 接上面的代码
+	delete book2.toString();
+	console.log(book2.toString());	// [object Object]
+	console.log(isPrototypeProperty(book2, "toString")); // true; toString 恢复为原型方法
+```
+### 给构建函数添加原型
 
 # 6. 继承（Inheritance）
 
