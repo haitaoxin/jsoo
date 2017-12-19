@@ -1135,7 +1135,7 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 
 最后两条两句显示，我们还是可以改变它成员对象所包含的特征值。所以这种冻结不是一种 deep frozen。这是因为我们冻结的是 myCar.status 的值，也就是说 myCar.status 不能再指向任何其它对象或者持有基础数据类型的值了，但是它指向的对象还是个普通的对象，还可以读写、增减，除非我们也进行这样的操作：`Object.freeze(myCar.status);`.
 # 5. 构建函数（Constructor）和原型（Prototype）
-我刚开始接触 JavaScript 的时候，有个问题困扰了我一段时间：JavaScript 对象的概念不难理解，但是怎么会没有类 （ class ）呢？因为以前有 C++ 和 Java 的经验，我们已经很熟悉面向对象编程的套路：定义 interface ➡️ 填充 members 做成类 ➡️ 实现此类的一个或者多个对象。如果没有类，难道是从一个对象复制另一个对象？（⚠️ ES6 终于引入了类，不过此类不是彼类，跟 C++ 或者 Java 的类不完全是一回事。待我们到第七章再分解。）
+我刚开始接触 JavaScript 的时候，有个问题困扰了我一段时间：JavaScript 对象的概念不难理解，但是怎么会没有类 （ class ）呢？因为以前有 C++ 和 Java 的经验，我们已经很熟悉面向对象编程的套路：定义 interface -> 填充 members 做成类 -> 实现此类的一个或者多个对象。如果没有类，难道是从一个对象复制另一个对象？（⚠️ ES6 终于引入了类，不过此类不是彼类，跟 C++ 或者 Java 的类不完全是一回事。待我们到第七章再分解。）
 
 我们知道如果有了一个对象，可以把它赋值给另一个变量，也可以用`Object.create()`创建一个新的对象。但是它们的结果都不一定是你想要的。比如看个简单的例子
 
@@ -1251,6 +1251,43 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 	}
 ```
 这段代码里“name”比较多（JavaScript 代码里输入参数跟函数内部变量名相同的情况很多），大家不要被绕晕。第二行的“name”是我们给构建的对象添加的特征值的key（所以它必须是个字符串）；第四行的 name 就是输入参数 name ——这个时候它在函数内部是个变量了，跟上一段代码里的变量 food 没什么不同，所以它也可以被当作一个“私有成员”在构建函数内部使用了。最后在 sayName() 方法里我们读取 this.name，那当然是对象的特征值才可以这么使用——这句话会调用特征值 name 的 getter，返回的恰好是内部变量 name 的值。如果读完我的解释你还晕，那请再读一遍，直到读懂。
+### 构建函数的调用方法检查
+因为构建函数就是个普通函数，所以别人也可以不带关键字 `new` 来调用它。这样得到的结果并不是根据构建函数创建的对象。而我们作为构建函数的定义者，也不希望别人这样使用它。我们来看几个使用标准内建构建函数的例子
+
+```
+	let a = new String("hello");
+	console.log(a instanceof String);	// true; 是一个 String 对象
+	a = String("hello");
+	console.log(typeof a);	// string; 是一个基础数据类型的 string
+	
+	a = new Date();
+	console.log(a instanceof Date);	// true; 是一个 Date 对象
+	a = Date();
+	console.log(typeof a);	// string; 又是一个 string
+	
+	a = new Map();
+	console.log(a instanceof Map);	// true; 是一个 Map 对象
+	a = Map();	// TypeError: Constructor Map requires 'new'
+```
+我们看到对 String() 和 Date() 调用没有使用`new`都不会报错。如果说 String() 得到的结果还在意料之中的话，Date() 的结果就有点儿意外了。而比较新的构建函数 Map() 如果你忘了`new`，JavaScript 引擎会报错。我个人认为，Map() 的做法是对的。因为大多数情况下，构建函数调用前没有`new`，或者是因为程序员马虎，或者是因为他是个新手，对构建函数还不熟悉。如果你疏忽而忘记了`new`，然后程序像 `a = Date();` 那样给你返回一个值而没有报错，这样的bug并不容易发现——你得到的结果可能并不立即使用，甚至根本不使用而传给其它模块了；你的单元测试代码恐怕也不会对每个变量赋值都检查它的对象类型。
+
+我们不能百分百避免马虎的错误，但是可以在自己的构建函数里实现类似于 Map() 那样的检查和报错，帮助函数的使用者尽早发现问题。我们需要的工具是`new.target`这个特征值（严格来讲`new`并不是一个对象，不过这是 JavaScript 实现的细节，不在我们讨论之列）。如果构建函数被调用的时候使用了关键字`new`，那么在构建函数内部，这个特征值就是此构建函数；否则其值为`undefined`。在构建函数里，通常一开始就判断它的值而决定继续执行还是报错：
+
+```
+	function Person(name) {
+		if (!new.target) {	// 判断 new.target 的真伪
+			throw new TypeError("Constructor Person requires \'new\'");
+		}
+		
+		// 正常执行语句
+		this.name = name;
+		// ...
+	}
+	
+	let jack = Person("Jack");	// TypeError: Constructor Person requires 'new'
+
+```
+
 ## 原型（Prototypes）
 但是以上的构建函数定义都有一个大问题。我们来看代码：
 
@@ -1305,7 +1342,7 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 ### `[[Prototype]]`特征值
 我们已经看了很多使用原型特征值方法的例子（所有标准内建对象的方法都是原型方法，我还没见过例外）。那么原型特征值到底是怎么来的、怎么使用呢？我们自己的构建函数里怎么定义它呢？我们本小节先回答第一个问题，后面章节会重点讨论第二个。
 
-内部特征值我们已经见过几个。JavaScript 还给每个对象定义了一个内部特征值`[[Prototype]]`。它是个引用数据类型，指向此对象使用的原型（ prototype ）。当你使用构建函数创建一个新的对象的时候（比如上面的 book1 和 book2），**新产生的对象就自动地被指向了构建函数的 `prototype`对象——这个步骤是 JavaScript 引擎悄悄地完成的，你无法也不需要干预**。但是 JavaScript 提供了一个`Object.getPrototypeOf()`方法让你得到一个对象的原型：
+内部特征值我们已经见过几个。JavaScript 还给每个对象定义了一个内部特征值`[[Prototype]]`。它是个引用数据类型，指向此对象使用的原型（ prototype ）。当你使用构建函数创建一个新的对象的时候（比如上面的 book1 和 book2），**新产生的对象的`[[Prototype]]`就自动地被指向了构建函数的 `prototype`对象——这个步骤是 JavaScript 引擎悄悄地完成的，你无法也不需要干预**。但是 JavaScript 提供了一个`Object.getPrototypeOf()`方法让你得到一个对象的原型（也就是它的`[[Prototype]]`指向的对象）：
 
 ```
 	// 接上面的代码
@@ -1678,7 +1715,87 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 
 这个缺省的 prototype 对象从 Object.prototype 继承而来；它里面只有一个成员 "constructor" 指向 prototype 对象所在的函数本身。读者应该还记得，在上一章里，我们就是在这个 prototype 对象里添加方法，作为构建函数创建出来的对象所能继承的原型方法。
 
-如果我们想把一个构建函数继承另外一个函数，其实方法很简单：把“子构建函数”的 prototype 指向“父构建函数”，这样就形成了原型链。
+如果我们想把一个构建函数继承另外一个函数，其实方法很简单：把“子构建函数”的 prototype 指向“父构建函数”构建的对象，这样就形成了原型链。下面我们来看个具体的例子
+
+```
+	// Rectangle 是个普通的构建函数
+	function Rectangle(length, width) {	
+		this.length = length;				// 它有两个自有特征值：length and width
+		this.width = width;
+	}
+	
+	// 给 Rectangle 定义两个原型方法
+	Rectangle.prototype.getArea = function() {
+		return this.length * this.width;
+	}
+	
+	Rectangle.prototype.toString = function() {
+		return `Rectangle: ${this.length} x ${this.width}`;
+	}
+	
+	// Square 是一种特殊的 Rectangle。它将继承 Rectangle 
+	function Square(length) {
+		this.length = length;
+		this.width = length;	// Rectangle 需要两个自有特征值，否则 getArea() 就无法使用了
+	}
+	
+	// ⚠️ 继承的关键：把 Square 的原型指向一个由 Rectangle 构建的对象
+	Square.prototype = new Rectangle();
+	Square.prototype.constructor = Square;	// 别忘了把 constructor 改过来
+	
+	// 我们可以覆盖继承过来的方法
+	Square.prototype.toString = function() {
+		return `Square with border of ${this.length}`;
+	}
+	
+	// 两个构建函数都已经做好，可以开始使用了
+	var rect = new Rectangle(7, 8);
+	var square = new Square(9);
+	
+	console.log(rect.getArea());	// 56
+	console.log(square.getArea());	// 81
+	
+	console.log(rect.toString());	// Rectangle: 7 x 8
+	console.log(square.toString());	// Square with border of 9
+	
+	console.log(rect instanceof Rectangle);	// true
+	console.log(rect instanceof Object);	// true
+	
+	console.log(square instanceof Square);	// true
+	console.log(square instanceof Rectangle);	// true
+	console.log(square instanceof Object);	// true
+```
+上面的代码很清楚，但我们还是把要点理一下：
+
+* 既然要继承，首先要把被继承的父构建函数定义好（我们前面说过，它的所有原型方法定义最好紧跟着函数定义）
+* 然后定义子构建函数。注意在此函数内部，父构建函数需要的自有特征值通常都要定义，否则以后调用父构建函数的原型方法的时候可能用到这些特征值（就像 getArea() 需要 length 和 width）就会出错
+* 最关键的一步：把子构建函数（ Square ）的 prototype 指向一个用父构建函数（ Rectangle ）创建的对象（⚠️而不是父构建函数本身）。这是因为这个新创建的对象的内部特征值`[[Prototype]]`指向 Rectangle.prototype 对象，这样就形成了原型链。
+* 经常忽略的一步是把子构建函数的 prototype 对象的 constructor 改回到子构建函数本身（上一句执行完，这个 constructor 显然是指向父构建函数的）
+* 最后，你可以在子构建函数的 prototype 上定义新的原型方法，也可以定义同名的方法覆盖父构建函数的原型方法
+
+以上模式建好之后，从 Square 创建的对象（ square ）在调用一个方法的时候，就会沿着 “自有方法-> Square的原型方法 -> Rectangle的原型方法 -> Object的原型方法” 这个次序依次寻找同名的函数使用。在这个次序的背后，就是原型链。下面的代码也许能帮你更直观地理解这条链：
+
+```
+	// 接上面的代码，以下所有结果皆为 true
+	console.log(square.__proto__ === Square.prototype);
+	console.log(square.__proto__.__proto__ === Rectangle.prototype);
+	console.log(square.__proto__.__proto__.__proto__ === Object.prototype);
+```
+
+### 不需要创建对象的构建函数继承
+理解了以上代码之后，细心的读者可能会问，我们在`Square.prototype = new Rectangle();`这句话里创建的 Rectangle 类型的对象哪儿去了？它就放在内存里并没有用、也永远不会被用到。而且由于我们并没有给它输入参数，它的 length 和 width 也都是 undefined。但是这些变量的内存还是被分配了，构建函数的语句还是被执行了。其实我们需要的仅仅是 Rectangle.prototype 这个对象。所以如果我们不希望执行父构建函数的语句而达到建立原型链的目的，上面这条语句可以改写为
+
+```
+	Square.prototype = Object.create(Rectangle.prototype, {
+		constructor: {	// 顺便把 constructor 也设好了
+			configurable: true,
+			enumerable: ture,
+			value: Square,
+			writable: true
+		}
+	}
+```
+这样的代码稍微复杂一些，但是执行的时候更简洁，最重要的是会避免由于没有输入参数而导致的构建函数出错，或者浪费无用对象的大块内存。
 
 # 7. 类（Class）
 
