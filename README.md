@@ -1733,7 +1733,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 		return `Rectangle: ${this.length} x ${this.width}`;
 	}
 	
-	// Square 是一种特殊的 Rectangle。它将继承 Rectangle 
+	// Square 是一种特殊的 Rectangle。它会继承自 Rectangle 
 	function Square(length) {
 		this.length = length;
 		this.width = length;	// Rectangle 需要两个自有特征值，否则 getArea() 就无法使用了
@@ -1789,13 +1789,108 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	Square.prototype = Object.create(Rectangle.prototype, {
 		constructor: {	// 顺便把 constructor 也设好了
 			configurable: true,
-			enumerable: ture,
+			enumerable: true,
 			value: Square,
 			writable: true
 		}
-	}
+	});
 ```
 这样的代码稍微复杂一些，但是执行的时候更简洁，最重要的是会避免由于没有输入参数而导致的构建函数出错，或者浪费无用对象的大块内存。
+### 调用父构建函数
+到目前为止，我们基本上已经实现了传统面向对象语言所提过的继承机制。但是在 JavaScript 的构建函数里没有类似于`super`这样的对象指向父构建函数。如果在子构建函数里我们希望调用父构建函数或者它的原型方法，怎么做呢？
+
+回想我们对函数的了解，其实不论任何函数，调用时处理参数不一样，还有一个关键就是当时调用它的对象、也就是`this`不一样，决定了它不一样的行为。而我们是可以通过`apply()`和`call()`这两个方法改变函数的`this`的。
+
+根据这个特点，我们从子构建函数调用父构建函数的基本思路就是把子构建函数当作`this`传入父构建函数，这样就可以把父构建函数及其方法当作自己的来用了。这样讲还比较抽象，咱们来看代码举例。首先是调用父构建函数本身
+
+```
+	function Rectangle(length, width) {	
+		this.length = length;
+		this.width = width;
+	}
+
+	Rectangle.prototype.getArea = function() {
+		return this.length * this.width;
+	}
+	
+	Rectangle.prototype.toString = function() {
+		return `Rectangle: ${this.length} x ${this.width}`;
+	}
+	
+	function Square(length) {
+		Rectangle.call(this, length, length);
+		// 以上语句调用 Rectangle 函数，通过 call() 把其 this 赋值为自身（也就是 Square 创建的对象），
+		// 并且给 Rectangle 需要的两个输入参数赋值
+	}
+	
+	Square.prototype = Object.create(Rectangle.prototype, {
+		constructor: {
+			configurable: true,
+			enumerable: true,
+			value: Square,
+			writable: true
+		}
+	});
+
+	Square.prototype.toString = function() {
+		return `Square with border of ${this.length}`;
+	}
+	
+	var square = new Square(9);
+	console.log(square.getArea());	// 81
+	console.log(square.toString());	// Square with border of 9
+```
+以上代码关键的一句是`Rectangle.call(this, length, length);`。如果你还记得`call()`的用法，这句话并不复杂。在这条语句的位置，`this`当然就是 Square 所创建的对象；我们通过`call`把它设成 Rectangle() 运行时的 this。在下面我们创建对象的时候（`var square = new Square(9);`），会在 Square() 内部调用到这条语句，看上去是类似于这个样子
+
+```
+	Rectangle.call(square, 9, 9);
+```
+再深一步到 Rectangle() 内部去看，因为这时的 this 是对象 square，`this.length = length;`这句就是给 square 的 length 成员赋值为9。
+
+除了赋值之外，更重要并且很常见的是在父构建函数里有一些初始化的工作。通过以上的方法我们就不必在子构建函数里重复一遍这些代码了。
+
+### 调用父构建函数的原型方法
+除了父构建函数本身，它定义好的原型方法也经常被子构建函数的原型方法调用。这是因为既然它们是继承关系，就必然有很多特性和行为是类似的——有其它面向对象语言基础的读者对此肯定不陌生。在 JavaScript 里实现这一点跟上一小节的方法非常类似，还是使用`.call()`。比如我们希望 Square.toString() 能重用 Rectangle.toString() 的一些输出，上面的代码可以改变如下：
+
+```
+	function Rectangle(length, width) {	
+		this.length = length;
+		this.width = width;
+	}
+
+	Rectangle.prototype.getArea = function() {
+		return this.length * this.width;
+	}
+	
+	Rectangle.prototype.toString = function() {
+		return `Rectangle: ${this.length} x ${this.width}`;
+	}
+	
+	function Square(length) {
+		Rectangle.call(this, length, length);
+	}
+	
+	Square.prototype = Object.create(Rectangle.prototype, {
+		constructor: {
+			configurable: true,
+			enumerable: true,
+			value: Square,
+			writable: true
+		}
+	});
+
+	Square.prototype.toString = function() {
+		// 调用父构建函数的原型方法，并且设定其 this 为自身
+		let text = Rectangle.prototype.toString.call(this);
+		return text.replace("Rectangle", "Square");
+	}
+	
+	var square = new Square(9);
+	console.log(square.toString());	// Square: 9 x 9
+```
+在上面的代码里，我们可以方便地调用父构建函数的原型方法，唯一需要额外做的就是加后缀`.call(this)`将其“偷梁换柱”成好像是自己的方法。
+
+所以结论是即便没有`super`，JavaScript 也允许我们相当容易地得到使用`super`的效果。
 
 # 7. 类（Class）
 
