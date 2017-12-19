@@ -1504,7 +1504,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 数组 Array 也是我们常用的标准对象。当然它也提供了很多现成的方法。但是对数组的操作可以是无穷无尽的，这些方法不可能全部支持。比如你的程序在处理数组类型的数据时（假设都是数值），需要经常计算所有成员的平均值，那你就可以定义这样一个方法，然后很方便的调用
 
 ```
-	if (!("average" in Array.prototype)) {	// 先检查一下没有这个原型方法
+	if (!("average" in Array.prototype)) {	// 先确认一下没有这个原型方法
 		Array.prototype.average = function() {
 	  	if (this.length === 0) {
 	    	return NaN;	// 如果数组为空则返回 NaN；严格来讲还应该检查每项是否为有效数值
@@ -1520,8 +1520,49 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	let arr0 = [];
 	console.log(arr0.average());	// NaN
 ```
-⚠️再强调一遍：给标准对象添加一个原型方法可以谨慎地使用，而覆盖一个已有的原型方法是非常危险的！
+⚠️再强调一遍：给标准对象添加原型方法可以谨慎地使用，而覆盖一个已有的原型方法是非常危险的！
 # 6. 继承（Inheritance）
+弄懂了原型，我们才能做好准备学习面向对象编程的另一个重要概念：继承。传统面向对象语言的继承是靠“子类继承父类”实现的。JavaScript 的类是个比较新的概念，是我们下一章的内容。在没有类的情况下 JavaScript 是如何实现继承的呢？靠的就是我们上一章讲的原型。
+## 原型链（ Prototype Chaining ）
+首先我们回顾一下上一章用过的简单例子
+
+```
+	function Person(name) {
+		this.name = name;	// 唯一的自有特征值被赋予输入参数的值
+	}
+	
+	Person.prototype = {
+		constructor: Person,	// 首先设定 constructor
+		
+		sayName: function() {
+			console.log(`My name is ${this.name}`);
+		},
+		
+		toString: function() {
+			return `[Person ${this.name}]`;
+		}
+	};
+	
+	let p1 = new Person("Jack");
+	
+	p1.sayName();		// My name is Jack
+```
+注意看最后一句：p1 并没有自有的方法叫做 "sayName"。当我们调用这个方法的时候，JavaScript 引擎先在自有方法里找，没有找到，它就自动去 p1 的内部特征值`[[Prototype]]`所指的那个对象去找；而这个对象就是 Person.prototype，它恰好有个方法叫做 "sayName"。JavaScript 引擎就把这个方法拿过来用了。其实这个过程不就是对象方法的继承吗？在 C++ 里，如果子类里找不到一个方法，它父类里的方法就会被调用，它们的继承靠的是父类-子类的定义。在JavaScript 里，靠的是原型的链接。这种链接机制被叫做“原型链”（ Prototype Chaining ），也被叫做“原型继承”（ Prototype Inheritance ）。
+## Object.prototype
+既然讲原型链，那就让我们从这条链的起头开始。我们知道绝大多数对象都是从标准对象`Object`继承而来的，换句话说它们可以使用`Object`的原型方法。比如
+
+```
+	let book = {
+		title: "Good Part"
+	};
+	
+	console.log(book.toString()); // [object Object]
+	console.log(book.toString === Object.prototype.toString);	// true; book 使用的 toString 方法就是 Object.prototype 提供的
+	
+	let bookProp = Object.getPrototypeOf(book);
+	console.log(bookProp === Object.prototype);	// true; bookProp 的内部 [[Prototype]] 特征值指向 Object.prototype
+```
+### Object.prototype 提供的方法
 
 # 7. 类（Class）
 
