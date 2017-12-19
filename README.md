@@ -1563,6 +1563,95 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	console.log(bookProp === Object.prototype);	// true; bookProp 的内部 [[Prototype]] 特征值指向 Object.prototype
 ```
 ### Object.prototype 提供的方法
+`Object`作为 JavaScript 最基础的对象，也提供了几个最基础的原型方法。其中有的我们已经见过了：
+
+* **hasOwnProperty()**：已经见过的，检查一个特征值是不是对象的自有特征值
+* **propertyIsEnumerable()**：检查一个自有特征值是不是可以枚举的（它的`[[Enumerable]]`内部特性是否为 true）
+* **isPrototypeOf()**：判断此对象是否为另一个对象的原型
+* **valueOf()**：返回此对象的基础数据类型。这个方法听上去很奇怪，你也不需要使用；它主要是给 JavaScript 引擎自用的
+* **toString()**：见过很多次了，返回代表此对象的一个字符串
+
+这些方法既然是原型方法，当然就是可以被其它对象继承和使用的，类似于这样：`myObj.toString()`。
+
+`Object`还有很多方法不是原型方法，比如我们之前使用过的`defineProperty()`、`getPrototypeOf()`、`freeze()`等等。这些方法直接定义在`Object`上，而不是`Object.prototype`上，所以它们不会被其它对象继承。使用它们的时候必须带`Object.`前缀，比如`Object.freeze(myObj)`。
+## 对象继承
+我们在本章第一节里已经讲了，继承的关键是建起来原型链，让“子对象”的`[[Prototype]]`指向被继承的父对象。通常有两种方法建立这种原型链；本节介绍第一个，对象继承（ Object Inheritance ）；下一节介绍另一种，构建函数继承（ Constructor Inheritance ）。
+
+对象继承的概念很简单：你已经有了一个对象（我们暂且称之为父对象），它有一些有用的特征值（方法）；现在你想建一个新的对象（叫它子对象），并且希望子对象可以继承过来父对象的方法重用。换句话说，这是**从对象到对象的继承**。
+
+如果你以为以前从来没这么做过，其实不对——你每次定义一个普通的对象的时候，JavaScript 都帮你做了这件事。JavaScript 做这件事使用的方法也是我们以前见过但是还不熟悉的：`Object.create()`。首先你应该注意到它不是个原型方法，所以你必须带着`Object.`来调用它。从名字就可以看出来它是用来创建一个对象的（也就是子对象）。它只需要两个输入参数：第一个是新对象的原型，也就是父对象；第二个可选，是子对象特征值的 property descriptors (我们在讲解特征值特性的章节用到过)。
+
+我们通过代码来看看
+
+```
+	// 我们一般是这样定义对象的
+	let book = {
+		title: "Good Parts"
+	}
+	
+	// 等同于以下代码
+	let book = Object.create(Object.prototype, {
+		title: {
+			configurable: true,
+    		enumerable: true,
+    		value: "Good Parts",
+    		writable: true
+    	}
+    });
+```
+从第二种表达形式我们可以清楚地看到，对象 book 的原型（也就是它的`[[Prototype]]`内部特征值）被设定为`Object.prototype`( `Object.create()`的第一个输入参数 )。这样 book 对象就可以使用上一小节列举的的那几个 Object 的原型方法了。
+
+如果是我们自建的父对象，这个方法也一样好用。比如
+
+```
+	let objParent = {	// 先建一个父对象
+		name: "Dad",
+	  
+	  getName: function() {		// 它有一个我们想重用的方法
+			return `my name is ${this.name}`;
+		}
+	}
+
+	// 下面建子对象；注意create()调用的第一个参数就是父对象
+	let objChild = Object.create(objParent, {
+		name: {		// 子对象的第一个特征值
+	  		configurable: true,
+	   		enumerable: true,
+	   		value: "Kid",
+	   		writable: true
+	  	},
+	  
+	  	age: {		// 子对象的第二个特征值
+	  		configurable: true,
+	   		enumerable: true,
+	    	value: 11,
+	    	writable: true
+	  	}
+	});
+	
+	console.log(objChild.getName());	// 子对象可以使用父对象的方法
+	console.log(objChild.age);		// 也可以使用自有特征值
+	console.log(objChild.toString());		// [object Object]
+	
+	console.log(objParent.hasOwnProperty("getName"));	// true
+	console.log(objChild.hasOwnProperty("getName"));	// false
+	console.log(objParent.isPrototypeOf(objChild));	// true
+```
+这段代码最关键的一句显然是`let objChild = Object.create(objParent, ...)`；我们靠这句把 objChild 的 `[[Prototype]]`设为 objParent，所以我们才可以通过原型链调用 objParent 的getName() 这个方法。
+
+另外一句很有意思的是`console.log(objChild.toString());`。objChild 自己并没有定义 toString() 这个方法；而 objParent 也没有，所以这个方法不是从 objParent 继承来的。对比本小节的第一段代码我们就会发现 objParent 的原型是 Object.prototype，而 toString() 正是在那里定义的。之所以`objChild.toString()`可以被执行而不出错，就是因为**JavaScript 引擎对特征值的搜索是沿原型链逐级上升的，直到找到结果或者到顶**。
+
+既然已经讲到`Object.create()`这个方法，顺便提一下，如果你想建一个没有任何原型的对象，也是可以的：
+
+```
+	let nakedObject = Object.create(null);
+	
+	console.log("toString" in nakedObject);	// false; nakedObject 不继承任何 Object 的方法
+	console.log("valueOf" in nakedObject);	// false
+```
+这是因为我们在`let nakedObject = Object.create(null);`这句里输入的参数是`null`，所以 nakedObject 的原型为空，当然也就没有任何方法继承过来。
+## 构建函数继承
+
 
 # 7. 类（Class）
 
