@@ -1649,9 +1649,36 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	console.log("toString" in nakedObject);	// false; nakedObject 不继承任何 Object 的方法
 	console.log("valueOf" in nakedObject);	// false
 ```
-这是因为我们在`let nakedObject = Object.create(null);`这句里输入的参数是`null`，所以 nakedObject 的原型为空，当然也就没有任何方法继承过来。
+这是因为我们在`let nakedObject = Object.create(null);`这句里输入的参数是`null`，所以 nakedObject 的原型为空，当然也就没有任何方法被继承过来。
 ## 构建函数继承
+我们已经学习了如何用构建函数创建对象，包括新创建的对象是如何继承构建函数里的方法的。但这只是一层继承关系，还没形成原型链。这节我们来学习一个构建函数如何继承另一个构建函数。
 
+在 JavaScript 里，每个函数（当然也包括构建函数）这定义的时候，JavaScript 引擎都会给它自动添加一个 key 为 "prototype" 的成员，指向一个对象。（⚠️普通对象的定义是没有这个自动添加的成员的。）我们用代码来说明更清楚：
+
+```
+	let obj = {}; 
+  	console.log(obj.prototype);	// undefined; 普通对象没有这个特征值
+  
+  	function f() {}
+  	
+  	/* JavaScript 引擎悄悄地帮你执行了以下语句
+  	f.prototype = Object.create(Object.prototype, {
+  		constructor: {
+  			configurable: true,
+  			enumerable: true,
+  			value: f,
+  			writable: true
+  		}
+  	});
+  	*/
+  	
+	console.log(f.prototype);	// f {}; 
+	console.log(typeof f.prototype);	// object
+```
+
+这个缺省的 prototype 对象从 Object.prototype 继承而来；它里面只有一个成员 "constructor" 指向 prototype 对象所在的函数本身。读者应该还记得，在上一章里，我们就是在这个 prototype 对象里添加方法，作为构建函数创建出来的对象所能继承的原型方法。
+
+如果我们想把一个构建函数继承另外一个函数，其实方法很简单：把“子构建函数”的 prototype 指向“父构建函数”，这样就形成了原型链。
 
 # 7. 类（Class）
 
