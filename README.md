@@ -2275,7 +2275,7 @@ Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知�
 ```
 从上面的最后一句可以看出，我们运行的还是父类的静态方法。（如果你不喜欢在这里显示父类的定时器的名字，可以自己练习如何带入子类的定时器名字。）
 
-## 从构建函数继承
+### 从构建函数继承
 到目前为止，我们看到的都是从父类到子类的继承。我们已经知道，所谓类其实就是构建函数。而在 ES6 正式发布类概念之前，已经有很多构建函数存在了，当然用户不想把那些代码都用类重写一遍。JavaScript 非常强大的支持了从构建函数到子类的继承！而且语法跟继承父类没什么不同。比如
 
 ```
@@ -2332,7 +2332,7 @@ Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知�
 	console.log(sq7 instanceof Rectangle);	// true
 ```
 当然`extends`也不是什么对象都可以跟的，还有一些限制。目前你只要记住应该放父类或者构造函数就够了。
-## 混合继承
+### 混合继承
 “混合继承”这个词是我无奈之下发明的，因为它的英文是 "mixin"。在其它面向对象语言里，它通常被叫做多重继承，也就是一个子类从多于一个父类里继承。这样的做法其实是把好几个父类的方法混合在一起都传承给子类，所以叫做 mixin 也有道理。
 
 JavaScript 并不直接支持混合继承，也就是说你不能在`extends`后面放多于一个父类。但是我们可以自己构建一个”混合函数“，把几个父类混合成一个，让子类来继承。这样的代码如下
@@ -2370,9 +2370,74 @@ JavaScript 并不直接支持混合继承，也就是说你不能在`extends`后
 	console.log(sq5.serialize());	// {"length":5,"width":5}
 ```
 上面代码关键函数的关键语句是`Object.assign(base.prototype, ...mixins);`。这个 Object 的方法接收两个或更多的对象作为输入参数；它把第二个及之后每个对象的可以枚举的特征值都复制到第一个对象上，这样就达到了混合或者说多重继承到效果。⚠️因为我们使用了`extends`实现继承，子类的 constructor 里还是要上来就调用`super()`，即便并没有任何父类初始化的代码要执行。
-## 从标准内建对象继承
+### 类里的 new.target 和抽象类
+我们记得在构建函数里，可以用特征值`new.target`来判断当前的调用是否有前缀`new`。因为类本质上也是构建函数、类的 constructor 就是执行构建函数本身的代码，所以`new.target`在类的 constructor 里也还是存在的。只不过像构建函数那样判断其真伪的逻辑已经被 JavaScript 引擎帮我们完成了。但是在有类的继承的情况下，我们还是可以读取这个值来判断使用者到底`new`的是哪个类：
 
-## 类里的 new.target
+```
+	class Rectangle {
+	
+		constructor(length, width) {
+			console.log(`I am ${new.target === Rectangle ? "" : "not "}created as Rectangle`);
+			this.length = length;
+			this.width = width;
+		}
+		
+		getArea() {
+			return this.length * this.width;
+		}
+	}
+	
+	class Square extends Rectangle {
+		
+		constructor(length) {
+			super(length, length);	
+		}
+	}
+	
+	var sq8 = new Square(8);	// I am not created as Rectangle
+	console.log(sq8.getArea());	// 64
+
+	var rect = new Rectangle(5, 3);	// I am created as Rectangle
+	console.log(rect.getArea());	// 15
+```
+在上面代码的父类的 constructor 里，我们用`new.target === Rectangle`来判断它是被赋值语句直接调用来生成 Rectangle 对象, 还是被作为父类调用来生成其它子类的对象。这个用法可以让我们实现面向对象语言的另一个功能，就是抽象类。抽象类的作用是仅仅作为其它类的基类，而自己不能用来直接生成对象的类。在 C++ 里抽象类里必须包括被用关键字`virtual`标识的纯虚函数成员。在 JavaScript 里没有这样的机制，也没有关键字`virtual`。但是我们可以在所谓“抽象类”里检查`new.target`来避免它创建对象（⚠️这里带引号的抽象类是表明在我们的设计中此类应该是抽象类，但是 JavaScript 语言并没有定义这个概念）。比如
+
+```
+	// 这里我们用 '_Abs' 前缀来表明“抽象类”，并没有语法上的意义
+	class _AbsShape {
+	
+		constructor() {
+			if (new.target === _AbsShape) {
+				throw new TypeError("_AbsShape cannot be used to instantiated directly.");
+			}
+		}
+		
+		getArea() {}
+	}
+	
+	// 类 Circle 继承自 _AbsShape 并且不是一个“抽象类”
+	class Circle extends _AbsShape {
+	
+		constructor(radius) {
+			super();
+			this.radius = radius;
+		}
+		
+		get Pi() {
+			return 3.1415926;
+		}
+		
+		getArea() {
+			return Math.pow(this.radius, 2) * this.Pi;
+		}
+	}
+	
+	let circle5 = new Circle(5);
+	console.log(circle5.getArea());	// 78.539815
+	
+	let shape1 = new _AbsShape();	// TypeError: _AbsShape cannot be used to instantiated directly.
+```
+在上面代码里，虽然我们希望 \_AbsShape 是个抽象类，但是因为没有任何语法的限制，`let shape1 = new _AbsShape();`这条语句是可以比顺利执行的。但是我们在抽象的基类 \_AbsShape 的 constructor 里判断了它是否被直接调用，如果是就抛出错误，达到了抽象类的效果。而它的子类的对象初始化（`let circle5 = new Circle(5);`）就没有问题。
 
 # 8. Proxy和Reflection API
 
