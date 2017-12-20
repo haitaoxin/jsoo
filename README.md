@@ -1799,9 +1799,9 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 ### 调用父构建函数
 到目前为止，我们基本上已经实现了传统面向对象语言所提过的继承机制。但是在 JavaScript 的构建函数里没有类似于`super`这样的对象指向父构建函数。如果在子构建函数里我们希望调用父构建函数或者它的原型方法，怎么做呢？
 
-回想我们对函数的了解，其实不论任何函数，调用时处理参数不一样，还有一个关键就是当时调用它的对象、也就是`this`不一样，决定了它不一样的行为。而我们是可以通过`apply()`和`call()`这两个方法改变函数的`this`的。
+回想我们对函数的了解，其实不论任何函数，除了调用时处理参数不一样，还有一个关键就是当时调用它的对象、也就是`this`不一样，决定了它不一样的行为。而我们是可以通过`apply()`和`call()`这两个方法改变函数的`this`的。
 
-根据这个特点，我们从子构建函数调用父构建函数的基本思路就是把子构建函数当作`this`传入父构建函数，这样就可以把父构建函数及其方法当作自己的来用了。这样讲还比较抽象，咱们来看代码举例。首先是调用父构建函数本身
+根据这个特点，我们从子构建函数调用父构建函数的基本思路就是把子构建函数当作`this`传入父构建函数，这样就可以把父构建函数及其方法当作自己的来用了。这样讲还比较抽象，咱们来看代码举例：
 
 ```
 	function Rectangle(length, width) {	
@@ -1893,6 +1893,100 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 所以结论是即便没有`super`，JavaScript 也允许我们相当容易地得到使用`super`的效果。
 
 # 7. 类（Class）
+跟很多程序员一样，我刚开始接触 JavaScript 的时候一直有这样的疑问：居然没有“类”这么核心的概念，JavaScript 还能算是面向对象的语言吗？大概 TC39 听到了群众的呼声，终于在 ES6 里增加了类（ Class ）。但是这个类并不是多么革命性的变化，反而更是语法上的美化。其实这也不奇怪，因为毕竟在没有类的日子里，我们也已经可以实现绝大多数面向对象的功能了。即便如此，我们还是应该熟练掌握这个新的类，不仅仅是因为它会让我们的代码更清晰、更简洁、更少出错，而且也有越来越多的第三方库是用类提供的。
+## 类定义的声明
+第一个定义类的方法是声明一个类，它的样子跟声明一个对象非常类似，但是它使用关键字`class`开头，内部定义一组方法，其中第一个一般都是`constructor()`；每个方法的定义都不需要关键字`function`，方法与方法之间也不需要逗号分隔。比如我们定义一个简单的类
+
+```
+	class Person {	// 类似于构建函数，类的第一个字母也应该大写
+	
+		// 此 constructor 作用就相当于构建函数
+		constructor(name) {
+			this.name = name;	// 在 constructor 里定义所有的自有特征值
+		}
+		
+		// 此 sayName 相当于构建函数的 Person.prototype.sayName
+		sayName() {
+			console.log(`My name is ${this.name}`);
+		}
+	}
+	
+	let jack = new Person("Jack");
+	jack.sayName();	// My name is Jack.
+	
+	console.log(jack instanceof Person);	// true
+	console.log(jack instanceof Object);	// true
+	
+	console.log(typeof Person);	// function
+	console.log(typeof Person.prototype.sayName);	// function
+```
+上面的代码里，我们首先用关键字`class`声明我们要定义的类，Person。Person 后面跟着花括弧，花括弧里就是这个类的所有方法了。
+
+第一个方法`constructor`的名字是关键字；它的作用类似 C++ 的 constructor——你应该在这里完成新建一个对象的所有初始化工作。但是在这之前，**你还应该声明所有的自有对象**（相当于 C++ 里定义 data member）。这不仅仅是因为在 JavaScript 的类里没有单独的地方声明自有特征值，而且把这些自有特征值的定义放在一起也大大提高了代码的可读性。当你在后面的代码里`new`一个对象的时候（比如`let jack = new Person("Jack");`），这个 `constructor()` 方法总会被执行，它的输入参数就是你传给类的输入参数（ "Jack" ）。
+
+类里面的其它方法看上去跟函数没什么不一样，并且上面的最后两句代码揭示了很有意思的事实：
+
+1. 类（比如 Person）其实是个 function。什么样的 function 呢？其实就是个构建函数
+2. 类里的方法（比如 sayName）并不是定义在类上的，而是定义在类的原型对象（ Person.prototype ）上的，并且它就是个函数，虽然我们没有使用关键字`function`定义它
+
+所以我们现在明白了，**类其实就是整容之后的构建函数**。当然这个“整容手术”还做好几件有用的事：
+
+* 类的定义不会被置顶，JavaScript 内部更像是用`let`而不是`var`来定义的这个构建函数
+* 类内部的代码都是运行于 strict 模式，没有例外
+* 类的所有方法都是不可遍历的；换句话说，它们的`[[Enumerable]]`内部特性的值都是`false`。这显然通常是合理的，比如我们遍历一个数组的时候当然是遍历数组里的每个数值，而不是数组自带的方法
+* 类内部的所有方法都不可以被当作构建函数，换句话说不能用`new`调用。应该没有人要这样用吧！
+* 调用类创建对象的时候必须带`new`，否则出错。从“类就是构建函数”的角度说，做这种检查是对的。但是从使用角度来说，我认为还不如根本不需要`new`——既然你调用类，JavaScript 引擎直接就加上`new`好了，还可以少敲几个字母。当然现在说什么也晚了。
+* 在类的方法内部试图改变类名变量的赋值会出错。
+
+前面的五条都容易理解，最后一条有点儿绕口令。虽然我不相信你会用到，但是我们还是看个例子，把它弄明白
+
+```
+	class Foo {
+		constructor() {
+			Foo = "bar";	// Uncaught TypeError: Assignment to constant variable.
+		}
+	}
+	
+	let foo = new Foo();
+```
+这里我们看到，“Foo"在类的内部是个常量，你不可以给它赋值。但是在类的外部，它是可以被赋值的（虽然我想不到任何情况你应该这么做）：
+
+```
+	// 接上面的代码
+	Foo = "bar";	// OK, no error
+```
+
+## 类定义的表达式
+跟函数类似地，类也可以用表达式来定义。既然是表达式，就是有等号的：等号左边是变量名，右边是要定义的类。比如
+
+```
+	let Person = class {
+
+		constructor(name) {
+			this.name = name;	// 在 constructor 里定义所有的自有特征值
+		}
+		
+		sayName() {
+			console.log(`My name is ${this.name}`);
+		}
+	}
+```
+除了第一行，这个定义跟上一节的代码完全一样。我们也可以给等号右边的“无名”类加一个名字，但是这个名字只能在类的内部使用。如果你试图用这个名字创建新的对象，程序会出错
+
+```
+	let Person = class PersonClass {
+
+		constructor(name) {
+			this.name = name;	// 在 constructor 里定义所有的自有特征值
+		}
+		
+		sayName() {
+			console.log(`My name is ${this.name}`);
+		}
+	}
+	
+	let larry = new PersonClass("Larry");	// ReferenceError: PersonClass is not defined
+```
 
 # 8. Proxy和Reflection API
 
