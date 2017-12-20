@@ -1988,6 +1988,392 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	let larry = new PersonClass("Larry");	// ReferenceError: PersonClass is not defined
 ```
 
+## 类也是“一等公民”
+跟函数一样，在 JavaScript 里类也是“一等公民”，也可拿来像其它对象一样使用，比如作为输入参数传个另一个函数：
+
+```
+	function createObj(classDef) {	// 此函数的输入参数是一个类
+		return new classDef();	// 返回值是用此类构建的对象
+	}
+	
+	let obj = createObj( class {
+		sayHi() {
+			console.log("吃了没？");
+		}
+	});
+	
+	obj.sayHi(); 	// 吃了没？
+```
+在 obj 的赋值语句里，我们给函数 createObj 传入一个无名的类，它只有一个方法 sayHi。createObj 执行之后，我们得到了这个无名类构建的对象并把它赋值给 obj。然后我们就可以正常使用它了。在实际的产品代码里，情况当然比这个要复杂，但是道理是一样的。
+## Singleton
+Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知道这个词中文怎么翻译最贴切）。它可以理解为“跟我同类的只有我这一个对象”。所以严格说来，创建它的目的不是为了使用丰富的面向对象的特性，而往往是为了把同类的一些方法组织起来放在一定对象里。比如 JavaScript 标准内建的 Math 对象和 JSON 对象。它们并不是为了让你用来构建一个 Math 类型或者 JSON 类型的对象，而是提供了一组很有用的算数运算方法或者处理 JSON 对象的方法。
+
+生成 singleton 的方法是在定义一个类的同时就调用它创建这个对象、并且不给这个类命名，这样它就不会被用来再生成一个同类的对象了。这个道理跟函数调用的 IIFE（ Immediately-Invoked Function Expression ）类似。咱们来看个例子
+
+```
+	let person = new class {
+	
+		constructor(name) {
+			this.name = name;
+		}
+		
+		sayName() {
+			console.log(`My name is ${this.name}`);
+		}
+	}("Obama");
+	
+	person.sayName(); // My name is Obama
+```
+注意这段代码跟普通的类定义表达式有两点不同：
+
+1. 在第一行的`class`之前用了`new`关键字，说明我们要调用这个类创建一个对象
+2. 在类定义的最后直接跟着一个括号，括号里面是此类的 constructor 的输入参数，也说明我们要调用这个类并且给出了参数
+
+因为在表达式`let person = new class {...}("Obama");`里，等号的右边定义了一个类并且立刻调用了它，所以等号左边的变量 person 被赋予的是一个此类的对象而不是一个类。并且因为刚被调用的这个类没有名字，所以以后也没法再调用它创建新的类了。由此我们得到了此类创建的唯一一个对象，也就是个 singleton。
+
+在实际工作中，这个办法可以被用来封装一组相关的方法，就像 Math 一样。比如你制作了一组处理自然语言的方法，你就可以把它们封装在一个叫做 “NaturalLang” 的对象里给别人使用。
+
+## 在类里定义 accessor property
+我们前面已经说过，对象的自有特征值都应该在类的 constructor 里定义好。但是如果你真的有需要使用 accessor property，也是可以的：
+
+```
+	class Person {
+		
+		constructor(name) {
+			this.name = name;
+			this.job = {
+				title: "unknown",
+				salary: 0
+			};
+		}
+		
+		get title() {
+			return this.job.title;
+		}
+		
+		set title(val) {
+			this.job.title = val;
+		}
+		
+		get salary() {
+			return this.job.salary;
+		}
+		
+		set salary(number) {
+			this.job.salary = number;
+		}
+	}
+	
+	var obama = new Person("奥巴毛");
+	
+	obama.title = "总统";
+	obama.salary = 198888;
+	
+	console.log(obama.title);	// 总统
+	console.log(obama.salary);	// 198888
+```
+
+## 静态方法
+传统面向对象语言都有静态方法，也就是那些不需要创建对象就可以使用的方法。JavaScript 的构建函数和类也都支持静态方法。我们先来看构建函数的静态方法
+
+```
+	function Person(name) {
+		this.name = name;
+	}
+	
+	// 静态方法：开始计时
+	Person.timerStart = function() {
+		console.time("Person Timer");
+	}
+	
+	// 静态方法：停止计时
+	Person.timerStop = function() {
+		console.timeEnd("Person Timer");
+	}
+	
+	// 原型方法
+	Person.prototype.getName = function() {
+		console.log(`My name is ${this.name}`);
+	}
+	
+	Person.timerStart();	// 直接从构建函数上调用静态方法；开始计时
+	
+	let p1 = new Person("Jack");
+	p1.getName();	// My name is Jack
+	
+	Person.timerStop();	// Person Timer: 2.989013671875ms; 停止计时并输出时长
+```
+在以上代码中可以看到，静态方法的定义跟原型方法很像，只是在构建函数和方法名之间没有`prototype`。这一个小小的区别决定了静态方法和原型方法完全不一样的行为：静态方法直接被构建函数调用，而不能被构建出来的对象调用，当然也就谈不上继承了。
+
+在类里定义静态方法更直观，只要在方法名之前使用关键字`static`。上面的代码用类定义可以重写为
+
+```
+	class Person {
+	
+		constructor(name) {
+			this.name = name;
+		}
+		
+		getName() {
+			console.log(`My name is ${this.name}`);
+		}
+		
+		// 静态方法
+		static timerStart() {
+			console.time("Person Timer");
+		}
+		
+		// 静态方法
+		static timerStop() {
+			console.timeEnd("Person Timer");
+		}
+	}
+	
+	Person.timerStart();	// 直接从构建函数上调用静态方法；开始计时
+	
+	let p1 = new Person("Jack");
+	p1.getName();	// My name is Jack
+	
+	Person.timerStop();	// Person Timer: 2.1669921875ms; 停止计时并输出时长
+```
+
+在代码里，我建议你把所有静态函数都写在紧跟 constructor 之后，或者都写在原型方法之后、类定义结束之前。这样这两类方法可以更清楚地区分开。
+
+## 类的继承
+作为“美化版的构建函数”，类当然也支持继承，并且继承的语法更简单、直观。ES6 里跟定义`class`关键字一起，还定义了两个关键字用来支持类的继承：`extends`和`super`。它们让 JavaScript 类的继承语法很类似于传统面向对象的语言了。
+### 使用`extends`和`super()`
+我们还用讲解构建函数继承时使用的例子，把它用类的继承重写一遍
+
+```
+	class Rectangle {
+	
+		constructor(length, width) {
+			this.length = length;
+			this.width = width;
+		}
+		
+		getArea() {
+			return this.length * this.width;
+		}
+		
+	}
+	
+	// Square 用 extends 继承 Rectangle
+	class Square extends Rectangle {
+		
+		constructor(length) {
+			// 用 super() 调用父类的 constructor
+			// 等同于 Rectangle.call(this, length, length)
+			super(length, length);	
+		}
+	}
+	
+	var sq8 = new Square(8);
+	
+	console.log(sq8.getArea());	// 64; 子类的对象调用父类定义的方法
+	console.log(sq8 instanceof Square);	// true
+	console.log(sq8 instanceof Rectangle);	// true
+```
+上述的代码比构建函数继承的代码明显简洁很多。`class Square extends Rectangle {`一句话就把我们赋值给 Square.prototype 、再改变 Square.prototype.constructor 的步骤都搞定了，看上去也不那么奇怪。
+
+在子类（ Square ）的 constructor 里，我们可以方便地通过`super()`调用父类的 constructor 来运行父类的初始化逻辑（当然在这里我们还可以加子类特有的逻辑）。需要注意的是，这里**`super()`的调用是必须的**（否则就父类就没有被初始化了），哪怕父类的 constructor 里是空的。如果子类没有定义 constructor，JavaScript 会帮你调用父类的 constructor。比如
+
+```
+	class Square extends Rectangle {
+		// no constructor here
+	}
+```
+等同于
+
+```
+	class Square extends Rectangle {
+		constructor(...args) {
+			super(...args);
+		}
+	}
+```
+从第二段代码可以看出来，JavaScript 引擎不仅帮你调用父类的 constructor，还把你传入子类的参数完整地传给父类。如果除了父类需要做的初始化工作，你的子类完全没有其它逻辑需要处理，不提供子类的 constructor 其实是很合理的。`super()`的使用还需要注意以下几点
+
+* `super()`只能用在子类里。如果你的类不继承任何父类而你使用它，程序会出错。
+* 你必须先调用`super()`，然后才能使用`this`指针。这是因为`this`的初始化也是`super()`工作的一部分。
+* 唯一不需要在子类的 constructor 里使用`super()`的情况就是子类的 constructor 直接返回一个对象。这种情况非常罕见。
+
+### 覆盖父类的方法
+如果子类需要覆盖父类的一个方法，子类只需要定义一个同名的方法就可以了：
+
+```
+	class Square extends Rectangle {
+		constructor(length) {
+			super(length, length);
+		}
+		
+		// 定义一个跟 Rectangle 方法同名的函数
+		getArea() {
+			return this.length * this.length;
+		}
+	}
+```
+如果你创建了一个 Square 类型的对象并且调用它的 getArea() 方法，因为 JavaScript 引擎在 Square 的原型里就找到了这个方法，这个方法当然就被使用，而不需要继续上溯原型链了。
+
+我们也可以在子类的方法里调用父类的方法，这还是通过`super`实现的。比如
+
+```
+	class Square extends Rectangle {
+		constructor(length) {
+			super(length, length);
+		}
+		
+		getArea() {
+			return super.getArea();	// 调用父类的方法
+		}
+	}
+```
+### 继承静态方法
+父类的静态方法都会被子类继承过来，而不需要任何代码（所以构建函数的这个“美容手术”还是很值得做的）。比如我们用子类继承本章前面的带静态方法的父类，得到
+
+```
+	class Person {
+	
+		constructor(name) {
+			this.name = name;
+		}
+		
+		getName() {
+			console.log(`My name is ${this.name}`);
+		}
+		
+		// 静态方法
+		static timerStart() {
+			console.time("Person Timer");
+		}
+		
+		// 静态方法
+		static timerStop() {
+			console.timeEnd("Person Timer");
+		}
+	}
+	
+	class Student extends Person {
+	
+		constructor(name, id) {
+			super(name);
+			this.id = id;
+		}
+		
+		getId() {
+			console.log(`My ID is ${this.id}`);
+		}
+	}
+	
+	Student.timerStart();
+	
+	let jack = new Student("Jack", 128924);
+	jack.getName();	// My name is Jack
+	jack.getId();	// My ID is 128924
+	
+	Student.timerStop();	// Person Timer: 1.991943359375ms
+```
+从上面的最后一句可以看出，我们运行的还是父类的静态方法。（如果你不喜欢在这里显示父类的定时器的名字，可以自己练习如何带入子类的定时器名字。）
+
+## 从构建函数继承
+到目前为止，我们看到的都是从父类到子类的继承。我们已经知道，所谓类其实就是构建函数。而在 ES6 正式发布类概念之前，已经有很多构建函数存在了，当然用户不想把那些代码都用类重写一遍。JavaScript 非常强大的支持了从构建函数到子类的继承！而且语法跟继承父类没什么不同。比如
+
+```
+	// 假设这是一个已有的构建函数
+	function Rectangle(length, width) {
+		this.length = length;
+		this.width = width;
+	}
+	
+	Rectangle.prototype.getArea = function() {
+		return this.length * this.width;
+	}
+	
+	// 新定义一个子类，继承上面的构建函数
+	class Square extends Rectangle {
+		constructor(length) {
+			super(length, length);
+		}
+	}
+	
+	// 使用子类创建对象
+	let sq7 = new Square(7);
+	console.log(sq7.getArea());	// 49
+	console.log(sq7 instanceof Rectangle);	// true
+```
+
+`extends`关键词后面甚至可以跟一个变量。比如上面的代码可以改为
+
+```
+	// 假设这是一个已有的构建函数
+	function Rectangle(length, width) {
+		this.length = length;
+		this.width = width;
+	}
+	
+	Rectangle.prototype.getArea = function() {
+		return this.length * this.width;
+	}
+	
+	function getParentClass() {
+		return Rectangle;
+	}
+	
+	// 新定义一个子类，继承的父类是一个函数的返回值
+	class Square extends getParentClass() {
+		constructor(length) {
+			super(length, length);
+		}
+	}
+	
+	// 使用子类创建对象
+	let sq7 = new Square(7);
+	console.log(sq7.getArea());	// 49
+	console.log(sq7 instanceof Rectangle);	// true
+```
+当然`extends`也不是什么对象都可以跟的，还有一些限制。目前你只要记住应该放父类或者构造函数就够了。
+## 混合继承
+“混合继承”这个词是我无奈之下发明的，因为它的英文是 "mixin"。在其它面向对象语言里，它通常被叫做多重继承，也就是一个子类从多于一个父类里继承。这样的做法其实是把好几个父类的方法混合在一起都传承给子类，所以叫做 mixin 也有道理。
+
+JavaScript 并不直接支持混合继承，也就是说你不能在`extends`后面放多于一个父类。但是我们可以自己构建一个”混合函数“，把几个父类混合成一个，让子类来继承。这样的代码如下
+
+```
+	let SerializableMixin = {
+		serialize() {
+			return JSON.stringify(this);
+		}
+	};
+	
+	let AreaMixin = {
+		getArea() {
+			return this.length * this.width;
+		}
+	}
+	
+	// 关键的 mixin 函数
+	function mixin(...mixins) {
+		let base = function() {};	// 先定义一个空函数当作构建函数的基础
+		Object.assign(base.prototype, ...mixins);
+		return base;
+	}
+	
+	class Square extends mixin(SerializableMixin, AreaMixin) {
+		constructor(length) {
+			super();
+			this.length = length;
+			this.width = length;
+		}
+	}
+	
+	let sq5 = new Square(5);
+	console.log(sq5.getArea());	// 25
+	console.log(sq5.serialize());	// {"length":5,"width":5}
+```
+上面代码关键函数的关键语句是`Object.assign(base.prototype, ...mixins);`。这个 Object 的方法接收两个或更多的对象作为输入参数；它把第二个及之后每个对象的可以枚举的特征值都复制到第一个对象上，这样就达到了混合或者说多重继承到效果。⚠️因为我们使用了`extends`实现继承，子类的 constructor 里还是要上来就调用`super()`，即便并没有任何父类初始化的代码要执行。
+## 从标准内建对象继承
+
+## 类里的 new.target
+
 # 8. Proxy和Reflection API
 
 # 9. 编程攻略
