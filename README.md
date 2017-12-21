@@ -2643,7 +2643,63 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 
 假设没有上一句，或者它抛出的 TypeError 被 catch 住了，下面一句`delete circle.radius;`就会被执行。这一句会触发另一个 trap `deleteProperty(target, key) {...}`。在这个函数里，我们先把所有不可删除的成员的键值放到一个`Set`里，这样以后可以很容易地扩展需要保护的成员列表。然后我们在`Set`对象里搜索输入的 key，如果找到了也抛出错误。
 
-## 在原型里使用 Proxy
+### 使用`ownKeys`Trap 隐藏对象成员
+我们知道 JavaScript 的对象没有所谓私有成员，而且在第四章我们还学习过一个方法`Object.keys()`可以枚举所有自有的、内部特性`[[Enumerable]]`为 true 的对象成员。如果你做好了一个对象给别人使用，但是其中有些成员其实是给对象内部使用的，哪怕你没有在文档是提及这些“内部成员”，别人还是可以用`Object.keys()`或者类似的方法发现它们。除了用`Object.defineProperty`一一把这些成员的`[[Enumerable]]`设为 false 之外，我们还有一个叫做`ownKeys`的 trap 可以用。
+
+`ownKeys`会在程序调用以下四个`Object`的方法时被触发：
+
+* `Object.keys()`
+* `Object.getOwnPropertyNames()`：这个功能跟`keys()`非常类似
+* `Object.getOwnPropertySymbols()`：这个用于成员的 key 是 symbol 的时候（Symbol 以后放到 ES6 的书中再说）
+* `Object.assign()`：因为`assign()`要把一个对象的全部自有成员拷贝到另一个对象上，所以它需要枚举第一个对象的所有自有成员的键值
+
+`ownKeys()`的输入只有一个，就是目标对象。`ownKeys`的返回值必须是一个数组，数组的内容就是你希望目标对象可以被枚举的那些键值。如果你不想对这些键值做任何过滤，你也可以直接返回`Reflect.ownKeys(target)`。
+
+下面我们用一个例子看看如何“半隐藏”对象的特定成员。我们以前提及过，对象内部使用的成员的命名往往用下划线`_`开头。但是这只是一种习惯，并没有语法上的意义。用以下的 proxy 可以从逻辑上把以下划线开头的自有成员在以上四个方法里隐藏起来
+
+```
+	// 先定义一个函数，用来生成会隐藏以“_”开头的成员的 proxy
+	function hideUnderscore(targetObj) {		// 输入是目标对象
+		return new Proxy(targetObj, {	// 输出是 proxy
+			ownKeys(target) {
+				// 先调用 Reflect.ownKeys() 得到缺省的键值列表
+				// 再用标准方法filter() 过滤掉是 string 并且以下划线开头的那些 key
+				return Reflect.ownKeys(target).filter(key => {
+					return typeof key !== "string" || key[0] !== "_";
+				});
+			}
+		});
+	}
+	
+	// 我们的目标对象
+	let studentTarget = {
+		name: "Jack",
+		grade: 7,
+		_age: 12,
+		_id: 44396
+	}
+
+	let student = hideUnderscore(studentTarget);	// 生成 proxy
+	
+	let names = Object.getOwnPropertyNames(student);	// 通过 proxy 获取成员列表
+	let keys = Object.keys(student);
+	// 通过 proxy 获取键值列表
+	
+	console.log(names.length);	// 2；只返回两个成员
+	console.log(names);	// [ 'name', 'grade' ]；以下划线开头的成员不见了
+	
+	console.log(keys.length);	// 2
+	console.log(keys);	// [ 'name', 'grade' ]
+```
+跟使用`Object.defineProperty`把所有下划线开头的成员的`[[Enumerable]]`特性设为 false 相比，这个办法显然更简洁、更有扩展性。如果你在目标对象里新增一个这样的对象，只要命名时加上下划线前缀就好了。
+
+但是需要指出的是，以上的方法只是“半隐藏”对象的成员。以下划线开头的成员虽然不能被枚举，但是还是可以被读写的：
+
+```
+	// 接上面的代码
+	console.log(student._id);	// 44396
+```
+使用`get`和`set` trap 阻止这样的读写会有一些意想不到的副作用。在下一章里我们会给出一个完全隐藏“私有”对象的方法。
 
 # 9. 编程攻略
 
