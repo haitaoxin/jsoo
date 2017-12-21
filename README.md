@@ -527,7 +527,9 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
     console.log(sumOfAll(5, 6, 7, 8));  // 26
     console.log(sumOfAll());            // 0
 ```
+
 如果此函数定义了输入参数名，那这些输入参数其实就是按次序排列的`arguments`的元素。比如
+
 ```
   function twoParam(first, second) {
     console.log((first === arguments[0]) + ' and ' + (second === arguments[1]));
@@ -536,16 +538,20 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
   twoParam('hello', 9);   // 'true and true'
   twoParam(100);   // 'true and true'; second 和 arguments[1] 都是 undefined
 ```
+
 ### 函数的 length
 顺便提一下，函数作为一个对象，它也有`length`这个成员，等于函数定义里的参数个数(对比于`arguments.length`是函数被调用时实际传入的参数个数)。比如
+
 ```
     // 接上面两段代码
     console.log(sumOfAll.length);   // 0
     console.log(twoParam.length);   // 2
 ```
+
 不过函数的`length`好像没什么用，至少我目前还没有机会真的在产品代码里使用。
 ## 函数重载（overloading）
 前面已经提到过JavaScript的函数重载，这里再多啰嗦两句。看看以下的代码
+
 ```
     function sayMsg(message) {
       console.log(message);
@@ -558,9 +564,11 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
     sayMsg();           // Have a nice day!
     sayMsg('Hello');    // Have a nice day!
 ```
+
 这段代码运行不会出错，但是最后一句并没有像其它面向对象语言的函数重载那样去调用第一个函数，而是也运行了第二个函数。这是因为第二个函数定义的时候，因为与第一个重名（即便参数列表不同），已经把第一个函数覆盖了----第一个函数再也无法被调用了。而第二个并不在乎是否有输入参数。
 
 所以，在JavaScript里需要判断输入参数的个数、类型等来实现函数重载的效果：
+
 ```
     function sayMsg(message) {
       if(!message) {                  // 或者 if(arguments.length === 0) {
@@ -572,10 +580,12 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
     sayMsg();           // Have a nice day!
     sayMsg('Hello');    // Hello
 ```
+
 ## 作为对象方法（method）的函数
 我们已经知道一个对象可以有任意个成员（properties），而每一个成员都可以是基础数据类型或者另一个对象。而函数这种对象在JavaScript里是“一等公民”，当然也可以做对象的成员。作为另一个对象成员的函数被叫做这个对象的方法（method）。这种叫法跟其它面向对象语言一致，很容易理解。但是反之，函数作为对象也有它自己的成员、有它自己的方法，这与很多语言不一样，我们下面也会遇到。
 ### 定义方法
 定义一个对象的方法跟定义其它类似的对象特征没什么不同，唯一区别就是分号“:”后面跟着的是函数定义：
+
 ```
     var person = {
       name: "老王",
@@ -592,6 +602,7 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 
     person.sayAgain();  // 老王老王
 ```
+
 以上的代码虽然工作正常，但是有个很大的问题：每当方法需要用到对象的其它成员的时候，必须前缀对象的名字`person.`。如果以后对象的名字改了、被复制了或者用其它方法生成新的对象，这些方法就都不工作了。⚠️ 如果不加这个前缀，这些方法就更不能工作了，因为它们找不到一个叫“name”的变量，而JavaScript并不会因为这是某个对象的方法就自动把这个对象的同名成员拿过来用。这个时候就要用到`this`这个关键字了。完全讲解`this`的概念大概需要另外一本书，但是在下一节我们会简单讲解怎么使用它。
 
 最后需要指出的是，作为方法的函数跟其它函数没有本质区别，唯一的区别就是它被定义在一个对象内部并且通常被当作对象的一个成员被调用而已。
@@ -609,6 +620,7 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 函数本来就是被用来调用的，居然它还有一个`call`方法是有点儿奇怪的。我们可以这样理解：如果是简单的调用，你不需要用这个方法；如果你特意用了`call`，那就是要更“高级”地使用这个函数了----这个高级之处，就是设定函数的`this`。为了区分这个函数和它所拥有的`call`方法（也是个函数），我们称这个函数为父函数。
 
 `call`的使用不复杂：因为它是父函数的方法，它要被用`.`加在父函数名后面；因为它自己也是函数，它名子后面要加括号和参数。它的第一个参数永远是父函数所需要的`this`所指的对象，其后的所有参数会被完整地按顺序送给父函数。比如
+
 ```
     function sayName(label) {
       console.log(`In ${label} my name is ${this.name}`);
@@ -623,8 +635,8 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
     sayName.call(p2, 'person2');    // In person2 my name is YT Jia
 
     sayName('global');              // In global my name is result (Chrome)
-                                    // In global my name is undefined (NodeJS)
 ```
+
 以上代码执行到`sayName.call(p1, 'person1');`这句话时，你可以想象成JavaScript引擎先把`sayName`函数里所有的`this`用`call`的第一个参数（也就是p1）代替，然后把第二个参数（‘person1’）传给这个替换过`this`的`sayName`，让它执行。
 
 另外，最后一句话是在最新的Chrome浏览器和NodeJS 6.x LTS里执行的结果。你可以看到‘Obama’并没有被`this.name`找到。这是因为把`this`指向全局太危险----设想你在离这句话很远的地方有个变量叫‘name’，你可能无意间就把那个变量的值改变了，也没有任何报错。所以新的JavaScript引擎已经不给你设定全局为`this`，你代码的错误更容易在开发阶段就被发现。
@@ -634,6 +646,7 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 * 虽然你在`apply()`用的是数组作为第二个参数，父函数得到的`arguments`还是那个“类似于数组”的对象，不是一个数组。
 
 下面看个简单的例子：
+
 ```
     let myCalc = {
       base: 0,
@@ -652,11 +665,13 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 
     console.log(myCalc.sum.call(n1, ...inputs));   // 15
 ```
+
 这段代码演示了你可以把一个对象的方法作用于另一个对象上。从这个意义上讲，`apply`这个词用得还是很贴切的。最后一行的用法不仅说明了`call`和`apply`的相似性，而且在有了 spread operator （`...`）之后，你可以如此简单地把一个数组“打开”，以至于`apply`显得有点儿多余了。
 #### `bind()`方法
 在箭头函数出现之前，`bind()`方法大概是这三种方法里最重要的了。它的作用跟`call`和`apply`正好相反：它是为了避免在程序运行过程中`this`被动态绑定到其它对象上，而在函数定义的代码里选择一个`this`，而不是把运行时调用这个函数的对象当作`this`。另外，一个函数被`bind`了之后的结果是生成了一个新的函数，而不是被调用了。这点和`call`、`apply`也不一样。
 
 下面咱们来看看在对象的方法为什么需要它。
+
 ```
     // 接上面的代码
     myCalc.timeout = function(sec) {
@@ -684,31 +699,37 @@ JavaScript提供这样一个对象的目的很简单：如果你的函数需要�
 在`.bind(this)`里，`this`是指此语句所在最近范围的对象，也就是 myCalc。当timer到时，JavaScript引擎调用这个回调函数的时候，`this`就是我们期望的 myCalc 了。如何用箭头函数更简洁地实现同样的效果，就六个读者作为一个小练习吧。
 
 需要指出的是，如果你对 timeout 这个成员函数调用其`call`或者`apply`方法，那么它的`this`、包括它里面回调函数的`this`还是会被改变的：
+
 ```
     // 接上面的代码
     myCalc.timeout.apply(n1, [3]);      // 3秒之后： 10
 ```
 
 除了以上这个`bind()`最常见的用处（尤其是在箭头函数出现之前），它还可以被用来生成“部分输入参数已定”的新函数。看下面的例子
+
 ```
    // 接上面的代码
    let fixedFirst = 1000;
    let n1Plus1000 = myCalc.sum.bind(n1, firstFirst);
    console.log(n1Plus1000(8));      // 1018 = n1.base(10) + first(1000) + second(8)
 ```
-n1Plus1000 是一个对 myCalc.sum 用`bind`绑定了两个参数的函数：第一个参数当然是把`this`绑定为 n1，第二个参数 1000 被绑定在 myCalc.sum 的第一个参数 first 上。所以这条语句可以这样理解：你给我一个函数 myCalc.sum， 我帮你把它的 `this` 定死了，把它的第一个输入参数也定死了，然后还给你一个新的函数——这个新函数只需要一个输入参数、也就是 myCalc.sum 的第二个参数就够了。
+
+n1Plus1000 是一个对 myCalc.sum 用`bind`绑定了两个参数的函数：第一个参数当然是把`this`绑定为 n1，第二个参数 1000 被绑定在 myCalc.sum 的第一个参数 first 上。所以这条语句可以这样理解：你给我一个函数 myCalc.sum， 我帮你把它的 `this` 定死了，把它的第一个输入参数也定死了，然后还给你一个新的函数——这个新函数只需要一个输入参数、也就是 myCalc.sum 的第二个参数就够了。
 
 然后在你调用`n1Plus1000(8)`的时候，这个函数其实是调用 myCalc.sum()并且把`this`赋值为 n1、first 赋值为1000、second 赋值为 8，myCalc.sum()里的语句带入变量值计算：
 
  n1.base + first + second = 10 + 1000 + 8 = 1018
 
  这种用法也是其它语言里比较少见的，更常见的是用一个 wrapper 带入固定的参数：
+ 
  ```
     function sumOfThree(a, b, c) { return a + b + c; }
     function sumOfTwo(a, b) { return sumOfThree(100, a, b); }
     console.log(sumOfTwo(1, 2));    // 103
  ```
+ 
 二者比较，使用`bind()`可以动态生成需要的新函数、动态绑定`this`、使用动态的固定变量，更灵活一些。
+
 # 4. 对象：深入了解
 我们在第二章讲到引用数据类型的时候，已经介绍了对象。在JavaScript里对象这个概念如此重要，而我们这本书又是关于面向对象编程。所以绝对值得再开辟一章，专门深入讲解它，尤其是我们如何更好地创建自己的对象（当然你相亲的对象不在本章讨论范围内）。
 ## 对象的成员（Properties）
@@ -2443,7 +2464,189 @@ JavaScript 并不直接支持混合继承，也就是说你不能在`extends`后
 ```
 在上面代码里，虽然我们希望 \_AbsShape 是个抽象类，但是因为没有任何语法的限制，`let shape1 = new _AbsShape();`这条语句是可以比顺利执行的。但是我们在抽象的基类 \_AbsShape 的 constructor 里判断了它是否被直接调用，如果是就抛出错误，达到了抽象类的效果。而它的子类的对象初始化（`let circle5 = new Circle(5);`）就没有问题。
 
-# 8. Proxy和Reflection API
-首先说明一下，本章的内容比较新，也比较抽象，算是本书的“进阶课题”吧。如果你是 JavaScript 初学者，也许你可以在第一遍阅读此书的时候跳过这一章。 、Proxy 和 Reflection API 被加入 ES6 的本意并不一定是更好地支持面向对象编程，但是它们客观地实现了这个目标。所以我还是把它们加入此书。如果你从来没有在别人的代码里使用它们，你可以是非常小心地尝试
+# 8. Proxy
+首先说明一下，本章的内容比较新，也比较抽象，算是本书的“进阶课题”吧。如果你是 JavaScript 初学者，也许你可以在第一遍阅读此书的时候跳过这一章。 、Proxy 和 Reflection API 被加入 ES6 的本意并不一定是更好地支持面向对象编程，但是客观上它们达到了这个效果。所以我还是把它们加入此书。如果你从来没有在别人的代码里见到过使用它们，你可以小心地尝试成为你们团队里第一个吃螃蟹的人。
+## Proxy，Trap，和 Reflect 的概念
+### Proxy
+有网络基础知识的读者对 Proxy 这个词大概不陌生，中文叫做“代理”。在网络上它被假设在客户端和服务器之间，客户端发给服务器的数据包都会被它首先收到。Proxy 可以检查这些数据包、改变其内容、拒绝它、或者更多地把它转交给服务器。
+
+JavaScript 的 Proxy 当然不是个网络设备，但是它的作用跟网络代理差不多：它本身是一个对象，架设在另一个对象（叫做目标对象，target）和使用目标对象的代码之间。它可以介入目标对象是如何被使用的；换句话说，**你对目标对象的某些特定操作要先从 Proxy 过一道手**。如果这样说还是抽象，我们来看个具体的例子
+
+```
+	// 最简单的 Proxy 举例：先定义一个目标对象
+	let target = {};
+	
+	// 再用 Proxy 构建一个 proxy 对象；Proxy() 的第一个输入参数是上面的目标对象，
+	// 第二个参数是另一个对象，我们称其为 handler；这里先设为空
+	let proxy = new Proxy(target, {});
+	
+	// 通过 proxy 给 target 赋值
+	proxy.name = "proxy";
+	console.log(proxy.name);	// proxy
+	console.log(target.name);	// proxy
+	
+	// 直接给 target 赋值
+	target.name = "target";
+	console.log(proxy.name);	// target
+	console.log(target.name);	// target
+```
+在这段代码里，我们使用`let proxy = new Proxy(target, {});`构建了一个代理 target 对象的 proxy。Proxy() 调用的第一个参数就是这个 target；第二个参数现在是个对象，我们叫它 handler（顾名思义它就是用来实现代理的那些功能的）。现在 handler 是空的，可以想象这个 proxy 什么都没做。或者更确切地说，它做的唯一一件事就是把你的操作原原本本地传给 target。所以下面我们给  proxy 定义新成员并赋值，其实是 target 得到了这个成员；我们从 proxy 取值，proxy 也把 target 的成员值原封不动地返还给我们。
+### Trap 和 Reflect
+这样的 proxy 当然还没什么用。关键是我们还没给 handler 里加东西。handler 是个对象，它的成员必须是一组事先被 JavaScript 语言定义好的方法中的若干个。这样的方法被称作 **Trap** 。每个方法对应一种 JavaScript 语言对目标对象的一种底层操作——这些底层操作原本只在 JavaScript 引擎内部使用，ES6 把它们提供出来是希望让 JavaScript 更灵活、更强大。
+
+全部 Trap（或者说 handler 支持的全部方法）的列表可以在 [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler) 上找到。我们在本章遇到几个常用的也会加以讲解。⚠️ Trap 的目的并不是要改变你给对象定义的那些方法的行为——那种改变应该通过类的继承和方法的覆盖完成。Trap 里的方法都是原本 JavaScript 引擎对对象本身的操作。
+
+Reflect 是 JavaScript 语言定义的另一个标准内建对象。它的任务是为上面列表中的每个 Trap 提供缺省的行为。所以它的成员是跟 Trap 同名的一组方法。它的使用不需要新建对象，直接调用`Reflect.method()`就可以，跟我们使用`Math`对象是一样的。最常见的使用方法是在一个 Trap 里先完成我们需要完成的任务（比如过滤输入值），然后调用同名的 Reflect 方法（把过滤过的数值传送给目标对象）。下面咱们来看几个有实际意义的例子。
+## Proxy的使用举例
+### 使用`set`过滤新的对象成员
+我们知道可以随时给对象添加新的成员，而且新成员的命名（只要是字符串）、赋值都是没有限制的。这种灵活性有的时候太宽松了。比如我们有一个对象里放的是一些商品品和它们对应的价格，这时候我们希望新添加的成员（产品）的赋值（价格）只能是数字。以前我们是没办法在添加对象成员的时候做这种限制的。阅读 MDN 的文档可知，Proxy handler 里有一个`set`方法，它恰好是对象成员赋值的 trap。（⚠️ 不要把这个`set`和我们以前见过的其它`set`混淆）它接受四个输入参数：
+
+* `target`：目标对象
+* `property`：对象成员的 key
+* `value`：对象成员的赋值
+* `receiver`：收到调用的那个对象，通常就是 proxy 对象本身
+
+基于这个 trap，我们可以构建和使用 proxy 来确保添加成员的值的确是数字：
+
+```
+	// 先定义目标对象
+	let priceTarget = {
+		category: "Food"	// 目标对象自己定义的成员还是不受限制
+	}
+
+	// 再定义 proxy
+	let foodPrice = new Proxy(priceTarget, {
+		
+		// 在 handler 里实现一个 trap -- set
+		set(target, key, value, receiver) {
+			// 如果是目标对象已有的成员，则不做检查
+			if (!target.hasOwnProperty(key)) {
+				if (isNaN(value)) {	// 如果输入的 value 不是数字则报错
+					throw new TypeError("Price must be a number");
+				}
+			}
+			
+			// 利用 Reflect 添加新的成员或赋值
+			return Reflect.set(target, key, value, receiver);
+		}
+	});
+	
+	// 给 foodPrice(priceTarget) 添加一个“合法”的成员
+	foodPrice.egg = 2.5;
+	console.log(foodPrice["egg"]);	// 2.5
+	console.log(priceTarget["egg"]);	// 2.5
+	
+	// 给 priceTarget 已有的成员赋值
+	foodPrice.category = "grocery";
+	console.log(foodPrice.category);	// grocery
+	console.log(priceTarget.category);	// grocery
+	
+	// 给 foodPrice(priceTarget) 添加一个“非法”的成员
+	foodPrice.milk = "expensive";	// TypeError: Price must be a number
+```
+以上代码中，我们的 proxy 被命名为 foodPrice（我个人不喜欢在此变量名里一定加上"proxy"，我更希望使用者把这个 proxy 当作一个正常的对象使用，至于它是如何做赋值检查的，那是应该被封装的对象内部逻辑）。在`let foodPrice = new Proxy(priceTarget, {`这行之后的嵌套有四层，大家要看仔细了：
+
+1. 第一层是为了定义 handler 对象，里面只有一个方法 set
+2. 第二层是 set 的函数内容
+3. 第三层的 `if` 是先检查一下 key：如果是给目标对象已有的成员赋值则跳过下一层
+4. 第四层才是我们需要的检查赋值是否为数字`if (isNaN(value)) {`。如果不是就报错；如果是就调用 Reflect 里同名的方法，“原来该怎么办还怎么办”。
+
+这个例子很典型地演示了如何**不通过继承而改变对象的某些行为**。
+### 使用`get`检查对象的 key
+JavaScript 有一个常为人诟病的问题：你如果试图读取一个对象并不存在的成员，比如
+
+```
+	let obj = {
+		value: undefined
+	}
+	
+	console.log(obj.value);	// undefined
+	console.log(obj.name);	// undefined
+```
+大多数其它语言在执行第二句 `console.log()`时会出错，因为它试图读取一个不存在的变量。而在 JavaScript 里，最后两条语句的返回没有任何区别。这显然不太合理，但是让 JavaScript 在新版本里突然把这个 bug 改了也很难，不知道有多少老代码会突然死掉。
+
+如果我们希望自己新定义的对象达到其它语言那样对未定义成员报错的效果，可以使用 Proxy 加`get`这个 handler。顾名思义，`get`在每次读取对象成员的值时都会被调用。`get`有三个输入参数：target，property，和 receiver。它们的含义跟在`set`里是一样的。注意`get`不需要输入 value，因为它本身就是要返回 value。
+
+上面的代码可以改写成如下形式，实现对读取不存在的成员报错：
+
+```
+	let objTarget = {
+		value: undefined,
+		date: 25
+	}
+	
+	let obj = new Proxy(objTarget, {
+		get(target, key, receiver) {
+			if (key in target) {	// 在 get 里判断 key 是否存在于 target 对象
+				return Reflect.get(target, key, receiver);
+			} else {
+				throw new ReferenceError(`\"${key}\" not exist in obj`);
+			}
+		}
+	})
+	
+	console.log(obj.value);	// undefined
+	console.log(obj.date);	// 25
+	console.log(obj.name);	// ReferenceError: "name" not exist in obj
+```
+
+以上的代码通俗易懂，就不多说了。但是要注意在`get` trap 里不是可以为所欲为的，比如你不能返回一个跟目标对象成员不一样的值。在使用之前请先认真学习文档。
+
+### 防止对象的成员被删除和修改
+JavaScript 除了可以随时增添对象的成员，也可以随时使用`delete`运算符删除。但是有的对象里的某些成员如果被删除，就没法正常工作了。比如对一个圆来说，它的半径和常量 π 是进行任何计算的基础，如果任何一个消失了，这个圆的其它方法就会出错。下面我们来构建这样一个 proxy，它可以防止
+
+1. 圆对象的半径或者 π 被删除
+2. π 的值被修改
+
+我们可以用已经见过的`set` trap 防止对象被修改。删除对象相应的 trap 是`deleteProperty`。`deleteProperty`只有两个输入参数：目标对象 target 和要被删除的成员键值 key。我们可以判断 key 是不是不可删除的成员；如果是则报错。
+
+```
+	let circleTarget = {
+		radius: 0,
+		Pi: 3.1415926,
+    	getArea() {
+    		return Math.pow(this.radius, 2) * this.Pi;
+    	}
+	};
+	
+	let circle = new Proxy(circleTarget, {
+		// 使用 set trap 防止常量 Pi 被赋值
+		set(target, key, value, receiver) {
+    		if (key === "Pi") {
+      			throw TypeError("Pi cannot be changed");
+      		} else {
+      			Reflect.set(target, key, value, receiver);
+      		}
+		},
+    
+    	// 使用 deleteProperty trap 避免 Pi 或者 radius 被删除
+    	deleteProperty(target, key) {
+    		let undeletableKeys = new Set(["Pi", "radius"]);
+    		if (undeletableKeys.has(key)) {
+      			throw Error("Pi and radius cannot be deleted");
+      		}
+    	}
+	});
+	
+	circle.radius = 10;	// radius 是可以变化的
+  	console.log(circle.radius);	// 10
+  	console.log(circle.getArea());	// 314.15926
+  	console.log(circle.Pi);		// 3.1415926
+  	
+  	circle.color = "red";	// 增加新成员，没有触发任何 trap
+  	delete circle.color;	// 成员 color 可以被删除
+  
+  	circle.Pi = 3.14;	// TypeError: Pi cannot be changed
+	delete circle.radius;	// Error: Pi and radius cannot be deleted
+```
+当程序运行到`circle.Pi = 3.14;`这句时，`set(target, key, value, receiver) {...}`这个 trap 会被调用。此函数发现要被更改的成员是 Pi，就会抛出一个 TypeError。
+
+假设没有上一句，或者它抛出的 TypeError 被 catch 住了，下面一句`delete circle.radius;`就会被执行。这一句会触发另一个 trap `deleteProperty(target, key) {...}`。在这个函数里，我们先把所有不可删除的成员的键值放到一个`Set`里，这样以后可以很容易地扩展需要保护的成员列表。然后我们在`Set`对象里搜索输入的 key，如果找到了也抛出错误。
+
+## 在原型里使用 Proxy
 
 # 9. 编程攻略
+
+## 举例1
+
+## 举例2
