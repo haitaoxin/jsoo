@@ -3112,3 +3112,48 @@ IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常
 这段代码的 mixin() 函数和两个构建函数都跟前一段完全相同。但是我们在 mixin() 的参数上稍加调整，就可以实现不一样的目的。因为我们并没有改造 ColorCircle 这个构建函数，它创建出来的其它对象（ cc2 ）不可以使用新的方法。
 
 ## Scope-Safe 构建函数
+我们在前面章节已经讲过构建函数如果被不带`new`前缀调用时候的一些问题，以及如何用`new.target`来判断是否有`new`前缀。这一节我们再拓展一下这个话题，并且演示另一个解决问题的方法。先看下面最简单的例子
+
+```
+	// 运行于非 strict 模式下
+	var name = "Jack";
+	
+	function Person(name) {
+	  	this.name = name;
+	}
+	
+	Person.prototype.sayName = function() {
+		console.log(`My name is ${this.name}.`);
+	}
+	
+	var p1 = Person("Mary");	// 忘了 new
+	console.log(name);	// Mary
+```
+这段代码显示，当程序运行在非 strict 模式下的时候，`var p1 = Person("Mary");`这条语句因为忘记了`new`，函数内部的`this`指向了全局，结果把全局变量 name 给改变了。这是非常危险的，也是很难发现的 bug 。
+
+这个问题的解决办法就是如果构建函数发现没有`new`，我们在代码里帮它加上。而如果正常使用了`new`，那么在构造函数内部运行的时候，`this`指向的当然就是要创建出来的对象了。我们可以利用这个特点把上面的代码改进如下
+
+```
+var name = "Jack";
+
+function Person(name) {
+  if (this instanceof Person){	// 效果等同于 if (new.target === Person){
+  	this.name = name;	// 给对象负债
+  } else {
+  	return new Person(name);	// 否则调用自己创建对象
+  }	
+}
+
+Person.prototype.sayName = function() {
+	console.log(`My name is ${this.name}.`);
+}
+
+var p1 = Person("Mary");
+var p2 = new Person("Mike");
+
+p1.sayName();	// My name is Mary.
+p2.sayName();	// My name is Mike.
+console.log(name);	// Jack
+```
+
+经过这样的处理，忘记了`new`的代码不仅可以一样生成对象，而且最重要的是不会无意间改变其它的变量值。
