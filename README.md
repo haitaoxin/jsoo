@@ -2803,7 +2803,312 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 ```
 我们可以看到，除了对忘记`new`的调用更友善之外，上面的代码还从通用的 Person 类“继承”为一个更特殊的“退休人员”类。当然这不是真正的继承，但是如果你希望对处理的数据有所限制的时候，这种方法还是很好用的。
 # 9. 编程攻略
-
+本书前面所举的很多例子，虽然短小，但是作者力图做到有实用价值。很多对象的构造方法，改一下变量名、增加对象的成员和方法，希望就可以用到你的代码里。在这一章里，我们不再讲解新的语言概念，而是重点介绍几个用 JavaScript 进行面向对象编程的攻略。
 ## 对象成员的封装
+前面已经提到过，JavaScript 面向对象编程最为人诟病的大概就是没有`private`关键字，对象的成员不容易轻易隐藏。但是这个问题并不是完全无解的。
+### 利用 IIFE 封装对象的私有成员
+IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常用的技巧，往往被用来执行一段一次性的逻辑。因为 IIFE 里的匿名函数的变量仅存在于它自己的函数范围命名空间内，我们可以把需要隐藏的变量放在此匿名函数内部，而把对象的公共成员从这个返回，看上去就是这样：
 
-## 举例2
+```
+	var myObj = (function() {
+		// 在这里定义对象的私有
+		
+		return {	// 返回给 myObj 的结果对象
+			// 这里定义对象的公共成员
+		};
+	}());
+```
+在上面的伪码中，匿名函数返回的对象会赋值给 myObj，当然里面的对象都是 myObj 可以读写的。而 `return`语句之前定义的函数内部变量，显然是在函数外部无法获取的，当然也不是 myObj 的成员。关键在于，这些**内部变量是可以被`return`语句返回的方法读写的，所以它们的效果等同于对象的私有成员**。
+
+来看个以前用过的例子：架设我们要构建一个 person 对象。他的名字是可以改的，但是他的出生年份不可以改，而他的年龄是当前年份减去出生年份。当前年份也不可以直接读写，但是可以通过方法递增。
+
+```
+	let person = (function () {
+		const birthYear = 1990;
+		let currentYear = 2017;
+	  
+		return {
+			name: "jack",
+			
+			older: function() {
+				currentYear++;
+			},
+			
+			get age() {
+	    		return currentYear - birthYear;
+			}
+		};
+	}());
+	
+	console.log(`My name is ${person.name} and age is ${person.age}`);	// My name is jack and age is 27
+	person.name = "josh";
+	person.age = 15;
+	console.log(`My name is ${person.name} and age is ${person.age}`);	// My name is josh and age is 27；name 可以改而 age 不可以改
+	
+	person.birthYear = 1980;
+	console.log(`My age is ${person.age}`);	// My age is 27；内部变量 birthYear 不能改
+	
+	person.currentYear = 2027;
+	console.log(`My age is ${person.age}`);	// My age is 27；内部变量 currentYear 也不能改
+	
+	person.older();	// older() 方法可以写 currentYear 内部变量
+	console.log(`My age is ${person.age}`);	// My age is 28
+```
+在上面的代码里，我们先用 IIFE 构造了一个对象。IIFE的匿名函数里有两个内部变量：birthYear 和 currentYear。匿名函数返回的对象里有一个数据成员 name、一个普通的方法 older() 和一个 accessor property "age"。其中 older() 可以给 currentYear 赋值，而 age() 需要读取 birthYear 和 currentYear。这两个内部变量都不可以通过最后返回的对象直接读写，而 birthYear 由于不可以被改变，我们直接把它定义为`const`。
+
+有的程序员喜欢把尽量多的逻辑写在 IIFE 返回的对象之外，而在返回对象里对每个成员再赋值，相当于对以上的代码稍做改变
+
+```
+	let person = (function () {
+		const birthYear = 1990;
+		let currentYear = 2017;
+		
+		function older() {
+			currentYear++;
+		}
+	  
+		return {
+			name: "jack",
+			
+			older: older,
+			
+			get age() {
+	    		return currentYear - birthYear;
+			}
+		};
+	}());
+```
+这样会让返回对象的成员看得更清楚，更像其它面向对象语言的 interface 定义。
+
+### 利用构造函数隐藏对象成员
+以上的方法虽然不错，但是有个问题。因为 IIFE 只运行一次，所以也只生成一个对象。如果我们要构建多个类似的对象、并且每个对象有不同的参数怎么办？
+
+我们可以把上面例子的 IIFE 打开并且给匿名函数命名，这样其实就是一个构建函数了：
+
+```
+	function Person(name, birthYear) {
+		let currentYear = 2017;
+	  
+		function older() {
+			currentYear++;
+		}
+	  
+		return {
+			name: name,
+			older: older,
+			get age() {
+	    		return currentYear - birthYear;;
+			}
+		};
+	}
+	
+	let p1 = new Person("jack", 1985);
+	console.log(`p1\'s name is ${p1.name} and age is ${p1.age}`);	// p1's name is jack and age is 32
+	
+	p1.name = "josh";
+	p1.age = 40;
+	console.log(`p1\'s name is ${p1.name} and age is ${p1.age}`);	//p1's name is josh and age is 32。可以改 name 但是不能改 age
+	
+	p1.birthYear = 1980;
+	console.log(`p1\'s age is ${p1.age}`);	// p1's age is 32
+  
+	p1.currentYear = 2019;
+	console.log(`p1\'s age is ${p1.age}`);	// p1's age is 32
+  
+	p1.older();	// p1 不可以读写 currentYear，但是 p1.older() 方法可以
+	console.log(`p1\'s age is ${p1.age}`);	// p1's age is 33
+	
+	let p2 = new Person("mike", 1995);	// 
+	p2.older();
+	console.log(`p2\'s age is ${p2.age}`);	// p2's age is 23
+	
+	console.log(p1.older === p2.older);	// false
+```
+以上的构建函数不能返回缺省的对象，而必须在函数内部构建一个对象返回。这样的代码满足了本小节开头时的要求，但是带来了新的问题：最后一句的输出说明此构建函数创建的两个对象并没有共享一个方法的存储。这并不奇怪，因为这个方法 older() 并不是一个原型方法。如果你在 Person() 的定义之后再定义一些原型方法，它们是无法读写 Person() 函数的内部变量的。
+
+另外，我们看 currentYear 这个成员，它对所有的对象显然应该是同一个数值。换句话说，它应该是个静态变量，用静态方法修改。下面我们看看如何用 IIFE 生成一个构建函数，它既有原型方法也有静态方法。
+
+
+```
+	var Person = (function() {
+		let currentYear = 2017;		// 静态“成员”，其实是匿名函数的内部变量
+	  
+	    function _Person(name, birthYear) {	// 在匿名函数里定义一个构建函数
+	    	this.name = name;	// 对象的普通成员
+				
+			Object.defineProperty(this, "birthYear", {
+					get: function() {	// 只读成员
+						return birthYear;
+					},
+					enumerable: true,
+					configurable: true
+			});
+	    }
+	    
+	    _Person.older = function() {	// 对象的的静态方法
+				currentYear++;
+			};
+	    
+	    _Person.prototype.getAge = function () {	// 原型方法
+	    	return currentYear - this.birthYear;
+	    }
+	  
+		return _Person;
+	}());
+	
+	let p1 = new Person("jack", 1985);
+	console.log(`p1\'s name is ${p1.name} and age is ${p1.getAge()}`);	// p1's name is jack and age is 32
+	
+	p1.birthYear = 1980;
+	console.log(`p1\'s age is ${p1.getAge()}`);	// p1's age is 32；结果没有变化
+    
+	p1.currentYear = 2019;
+	console.log(`p1\'s age is ${p1.getAge()}`);	// p1's age is 32；结果没有变化
+  	
+	let p2 = new Person("mike", 1995);	// 
+	console.log(`p2\'s age is ${p2.getAge()}`);	// p2's age is 22
+  
+	Person.older();	// 调用静态方法
+	console.log(`p1\'s age is ${p1.getAge()}`);	// p1's age is 33
+	console.log(`p2\'s age is ${p2.getAge()}`);	// p2's age is 23；p1 和 p2 的年龄同时递增
+```
+
+在这个例子里我们使用了一个 IIFE。它的匿名函数里定义了以下内容：
+
+* 本地变量 currentYear ：因为匿名函数只被调用了一次，所以这个变量在内存里只有一份；换句话说，它是被下面构建函数生成的所有对象共享的
+* 构建函数 _Person ：这是我们最后要返回的结果，里面定义了一个普通成员 name 和一个只读成员 birthYear
+* 构建函数的普通方法 _Person.older() ：联想我们在构建函数章节讲到的，这样定义的方法就是静态方法
+* 构建函数的原型方法 _Person.prototype.getAge() ：它的计算需要用到对象的自有成员 birthYear 和静态成员 currentYear
+
+使用这个 IIFE 生成的构建函数，我们可以创建两个对象 p1 和 p2。试图通过 p1 去修改 birthYear 或者 currentYear 都是无效的，只有通过静态方法 `Person.older();`才可以递增 currentYear，从而递增所有 p1 和 p2 的 getAge() 返回值。
+
+⚠️ 上面代码有个小问题：因为每个对象的 birthYear 是不能共享的，而且我们在原型方法 getAge() 里需要用到这个变量，所以我们必须把它设为只读成员。如果你要求这个成员完全不可以通过对象直接读写，那上面的代码还是不够完美。说到底，JavaScript 还是没有一种机制让对象的某个成员允许由其方法读写，而不能由使用对象的代码直接读写。
+
+## Mixins
+不同于构建函数或者类的继承， mixin 的目的是把其它对象（我们称之为供应对象 supplier）的成员借用过来，加在我们需要使用的对象（称之为接收对象 receiver ）上，但是不改变接收对象的原型。它不是 JavaScript 正规定义的一个功能，也有人对它有争议，比如 React 的开发者就认为[它是有害的](https://reactjs.org/blog/2016/07/13/mixins-considered-harmful.html)，并且要[彻底弃用它](https://medium.com/@dan_abramov/mixins-are-dead-long-live-higher-order-components-94a0d2f9e750)。但是毕竟还是有很多人在使用它，它已经存在于大量的代码里。不论你是否直接使用它，间接上你很难避免遇到它，比如在第三方的库里。我们在这里不想争论它的优劣，只想讲清楚它是怎么工作的，由读者自行判断在你的代码里如何使用。
+
+我们前面已经见过通过调用`Object.assign()`方法的 mixin 例子，这里再看另一个途径。先定义一个用于 mixin 的函数
+
+```
+	function mixin(receiver, supplier) {
+		for (var property in supplier) {
+			if (supplier.hasOwnProperty(property) && !(property in receiver)) {
+				receiver[property] = supplier[property];	// 注意不能是 receiver.property = supplier.property！
+			}
+		}
+		
+		return receiver;
+	}
+```
+
+这个函数有两个输入参数，分别是 receiver 和 supplier 这两个对象。它的内部逻辑很简单：枚举 supplier 的所有自有成员，如果 receiver 里没有这个成员（如果你希望用 supplier 的同名成员覆盖它，就不做这个判断），就把它拷贝到 receiver 上。这个拷贝是 shallow copy，也就是说如果拷贝的是 supplier 的一个对象成员，那并没有在 receiver 里创建一个新对象，而是在原有对象上新加了一个指针。咱们把这个函数放到一个具体的例子里来看看。
+
+假设你做了一个名为 Circle 的构建函数，它生成的对象有两个自有成员 radius 和 color，和一个原型方法 sayName()。使用一段时间后你需要给它添加计算面积和周长的方法。这时你发现别人已经写好了一个有这种运算功能的构建函数 CalcCircleArea。当然我们要尽量重用已有的代码，下面的代码让你可以“借用”你需要的方法：
+
+```
+	// 我们的 mixin 函数
+	function mixin(receiver, supplier) {
+		for (var property in supplier) {
+			if (supplier.hasOwnProperty(property) && !(property in receiver)) {
+				receiver[property] = supplier[property];
+			}
+		}
+		return receiver;
+	}
+  
+  	// ColorCircle 构建函数
+	function ColorCircle(radius, color) {
+		this.radius = radius;
+		this.color = color;
+	}
+  
+	ColorCircle.prototype.sayName = function() {
+		console.log(`My radius is ${this.radius} and my color is ${this.color}`);
+	}
+  
+  	// CalcCircleArea 构建函数
+	function CalcCircleArea(radius) {
+		this.radius = radius;
+		this.Pi = 3.1415926;
+    
+		this.getArea = function() {
+    		if(typeof this.radius === 'number') {
+        		return Math.pow(this.radius, 2) * this.Pi;
+        	} else {
+        		return NaN;
+			}
+  		};
+    
+    	this.getCircumference = function() {
+			if(typeof this.radius === 'number') {
+        		return  2 * this.radius * this.Pi;
+        	} else {
+        		return NaN;
+        	}
+    	};
+  	}
+
+	// 注意，这里的 receiver 是 ColorCircle.prototype，而 supplier 是一个用 CalcCircleArea() 创建的对象
+  	mixin(ColorCircle.prototype, new CalcCircleArea());
+  
+  	let colorCircle = new ColorCircle(3, "yellow");	// 用 mixin 过了方法的构建函数创建对象
+  	colorCircle.sayName();	// My radius is 3 and my color is yellow；原本的方法还可以使用
+  	console.log(colorCircle.getArea());	// 28.2743334；新的方法也可以使用了
+  	console.log(colorCircle.getCircumference());	// 18.849555600000002
+```
+
+再来看个稍微变化的情况。架设 ColorCircle 是别人已经定义好、大家共用的构建函数，你不想改变它。但是在你自己用 ColorCircle 创建的一个对象里，你需要计算面积和周长的方法。上面的代码可以修改如下
+
+```
+	function mixin(receiver, supplier) {
+		for (var property in supplier) {
+			if (supplier.hasOwnProperty(property) && !(property in receiver)) {
+				receiver[property] = supplier[property];
+			}
+		}
+		return receiver;
+	}
+  
+	function ColorCircle(radius, color) {
+		this.radius = radius;
+		this.color = color;
+	}
+  
+	ColorCircle.prototype.sayName = function() {
+		console.log(`My radius is ${this.radius} and my color is ${this.color}`);
+	}
+  
+	function CalcCircleArea(radius) {
+		this.radius = radius;
+		this.Pi = 3.1415926;
+    
+		this.getArea = function() {
+    		if(typeof this.radius === 'number') {
+        		return Math.pow(this.radius, 2) * this.Pi;
+        	} else {
+        		return NaN;
+			}
+  		};
+    
+    	this.getCircumference = function() {
+			if(typeof this.radius === 'number') {
+        		return  2 * this.radius * this.Pi;
+        	} else {
+        		return NaN;
+        	}
+    	};
+  	}
+
+	// 使用 mixin 函数直接返回一个“混合”好的对象
+	let colorCircle = mixin(new ColorCircle(3, "yellow"), new CalcCircleArea());
+
+  	colorCircle.sayName();	// My radius is 3 and my color is yellow  
+  	console.log(colorCircle.getArea());	// 28.2743334
+  	
+	let cc2 = new ColorCircle(5, "green");
+    cc2.sayName();	// My radius is 5 and my color is green
+    console.log(cc2.getArea());	// TypeError: cc2.getArea is not a function
+```
+这段代码的 mixin() 函数和两个构建函数都跟前一段完全相同。但是我们在 mixin() 的参数上稍加调整，就可以实现不一样的目的。因为我们并没有改造 ColorCircle 这个构建函数，它创建出来的其它对象（ cc2 ）不可以使用新的方法。
+
+## Scope-Safe 构建函数
