@@ -1251,7 +1251,7 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 构建函数的输出需要注意（这里都是指被当作构建函数调用、也就是使用`new`关键字的情况下）有两种情况：
 
 * 如果此函数最后执行了返回语句`return`并且返回值是个对象，那这个对象就是返回值
-* 如果此函数没有执行`return`或者`return`跟的是个基础数据类型，那就返回此函数创建的对象
+* 如果此函数没有执行`return`或者`return`的是个基础数据类型，那就返回此函数创建的对象
 
 第一种情况容易理解（但是比较少见）；第二种情况所谓“此函数创建的对象”到底是哪个对象？或者更确切地说，这个对象是个什么样子、有什么成员呢？这是我们下一节要回答的问题。
 ### 构建对象的成员
@@ -1278,7 +1278,14 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 ```
 跟上一版比，这一版的`Person`构建函数更“高级”了：它现在接受一个输入参数，“name"，并且把它赋予新创建对象的 ”name" 成员上。新对象还有一个方法叫 "sayName"，你可以在新对象建好后调用。而且我们构建的两个对象 jack 和 jenny 显然不是同一个。现在这样的对象就很像是我们在 C++ 里用类实现的对象了。
 
-⚠️ 从代码的最后一句我们可以看到，如果你在构建函数内部定义了一个变量（ food ）而没有前缀`this.`，那它就是个构建函数范围内的变量而已；它可以被同命名空间内的代码使用：`console.log(`${this.name} eats ${food}`);`。但是它不是新构建对象的一个成员，你也不能在构建函数外部读写它。从这个角度来说，它有些类似私有成员。
+⚠️ 从代码的最后一句我们可以看到，如果你在构建函数内部定义了一个变量（ food ）而没有前缀`this.`，那它就是个构建函数范围内的变量而已；它可以被同命名空间内的代码使用：
+
+```
+console.log(`${this.name} eats ${food}`);
+
+```
+
+但是它不是新构建对象的一个成员，你也不能在构建函数外部读写它。从这个角度来说，它有些类似私有成员。
 
 除了 data property，我们还可以在构建函数里定义 accessor property，也可以设定对象成员的特性。比如
 
@@ -1301,8 +1308,10 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 	}
 ```
 这段代码里“name”比较多（JavaScript 代码里输入参数跟函数内部变量名相同的情况很多），大家不要被绕晕。第二行的“name”是我们给构建的对象添加的成员的key（所以它必须是个字符串）；第四行的 name 就是输入参数 name ——这个时候它在函数内部是个变量了，跟上一段代码里的变量 food 没什么不同，所以它也可以被当作一个“私有成员”在构建函数内部使用了。最后在 sayName() 方法里我们读取 this.name，那当然是对象的成员才可以这么使用——这句话会调用成员 name 的 getter，返回的恰好是内部变量 name 的值。如果读完我的解释你还晕，那请再读一遍，直到读懂。
-### 构建函数的调用方法检查
-因为构建函数就是个普通函数，所以别人也可以不带关键字 `new` 来调用它。这样得到的结果并不是根据构建函数创建的对象。而我们作为构建函数的定义者，也不希望别人这样使用它。我们来看几个使用标准内建构建函数的例子
+### 判读构建函数的调用方法
+因为构建函数就是个普通函数，所以代码也可以不带关键字 `new` 来调用它。这样得到的结果并不是根据构建函数创建的对象。而我们作为构建函数的定义者，往往也不希望别人这样使用它。
+
+我们来看几个使用标准内建构建函数的例子
 
 ```
 	let a = new String("hello");
@@ -1319,9 +1328,9 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 	console.log(a instanceof Map);	// true; 是一个 Map 对象
 	a = Map();	// TypeError: Constructor Map requires 'new'
 ```
-我们看到对 String() 和 Date() 调用没有使用`new`都不会报错。如果说 String() 得到的结果还在意料之中的话，Date() 的结果就有点儿意外了。而比较新的构建函数 Map() 如果你忘了`new`，JavaScript 引擎会报错。我个人认为，Map() 的做法是对的。因为大多数情况下，构建函数调用前没有`new`，或者是因为程序员马虎，或者是因为他是个新手，对构建函数还不熟悉。如果你疏忽而忘记了`new`，然后程序像 `a = Date();` 那样给你返回一个值而没有报错，这样的bug并不容易发现——你得到的结果可能并不立即使用，甚至根本不使用而传给其它模块了；你的单元测试代码恐怕也不会对每个变量赋值都检查它的对象类型。
+我们看到对 `String()` 和 `Date()` 调用没有使用`new`都不会报错。如果说 `String()` 得到的结果还在意料之中的话，`Date()` 的结果就有点儿意外了。而比较新的构建函数 `Map()` 如果你忘了`new`，JavaScript 引擎会报错。我个人认为，`Map()` 的做法是对的。因为大多数情况下，构建函数调用前没有`new`，或者是因为程序员马虎，或者是因为他是个新手，对构建函数还不熟悉。如果你疏忽而忘记了`new`，然后程序像 `a = Date();` 那样给你返回一个值而没有报错，这样的bug并不容易发现——你得到的结果可能并不立即使用，甚至根本不使用而传给其它模块了；你的单元测试代码恐怕也不会对每个变量赋值都检查它的对象类型。
 
-我们不能百分百避免马虎的错误，但是可以在自己的构建函数里实现类似于 Map() 那样的检查和报错，帮助函数的使用者尽早发现问题。我们需要的工具是`new.target`这个成员（严格来讲`new`并不是一个对象，不过这是 JavaScript 实现的细节，不在我们讨论之列）。如果构建函数被调用的时候使用了关键字`new`，那么在构建函数内部，这个成员就是此构建函数；否则其值为`undefined`。在构建函数里，通常一开始就判断它的值而决定继续执行还是报错：
+我们不能百分百避免马虎的错误，但是可以在自己的构建函数里实现类似于`Map()`那样的检查和报错，帮助函数的使用者尽早发现问题。我们需要的工具是`new.target`这个成员（严格来讲`new`并不是一个对象，不过这是 JavaScript 实现的细节，不在我们讨论之列）。如果构建函数被调用的时候使用了关键字`new`，那么在构建函数内部，这个成员就是此构建函数；否则其值为`undefined`。在构建函数里，通常一开始就判断`new.target`的值而决定继续执行还是报错：
 
 ```
 	function Person(name) {
@@ -1337,15 +1346,28 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 	let jack = Person("Jack");	// TypeError: Constructor Person requires 'new'
 
 ```
-
+在本书后面章节，我们还会介绍另外一个方法实现同样的效果。
 ## 原型（Prototypes）
 但是以上的构建函数定义都有一个大问题。我们来看代码：
 
 ```
-	// 接上面的代码
+	function Person(name) {
+		this.name = name;
+		let food = "meat and vegetable";
+		this.sayName = function() {
+			console.log(`${this.name} eats ${food}`);
+		}
+	}
+	
+	let jack = new Person('Jack');
+	let jenny = new Person('Jenny');
+	
+	jack.sayName();		// Jack eats meat and vegetable
+	jenny.sayName();		// Jenny eats meat and vegetable
+	
 	console.log(jack.sayName === jenny.sayName);	// false
 ```
-这句话的运行结果为 false，说明这两个方法不是同一个，也就是说同样的函数在内存里放了两份。而每个函数的存储除了我们写的语句，还有它自带各种成员，并不是小到可以忽略不计的。假设我们在代码里定义一个“学生”构建函数，它返回的对象有十个方法。那我们创建1000个“学生”对象之后，这十个方法就被在内存里重复存储了1000次！在显然是不能接受的。我们需要的是 C++ 那种“数据独立、方法共享”的对象。而原型就是让我们定义那些共享的对象成员的途径。Zakas 把原型比喻成菜谱也很形象：比如你要做个西红柿炒鸡蛋，怎么做这个菜的方法就是原型，它可以是写在菜谱上、人人都读的同一篇文章，但不是具体的食物；你用你的西红柿和鸡蛋做你的菜，别人做别人的。你们共享同一个菜谱，但是各有各的鸡蛋。
+以上最后一句代码的运行结果为 false，说明这两个变量不是指向同一个引用数据类型，也就是说同样的函数对象在内存里放了两份。而每个函数的存储除了我们写的语句，还有它自带的各种成员，占用的内存空间并不是小到可以忽略不计的。假设我们在代码里定义一个“Student”构建函数，它返回的对象有十个方法。那我们创建1000个“Student”类型的对象之后，这十个方法就被在内存里重复存储了1000次！在显然是不能接受的。我们需要的是 C++ 那种“数据独立、方法共享”的对象。而原型就是让我们定义共享的对象成员的途径。Zakas 把原型比喻成菜谱也很形象：比如你要做个西红柿炒鸡蛋，怎么做这个菜的方法就是原型，它可以是写在菜谱上、人人都读的同一篇文章，但不是具体的食物；你用你的西红柿和鸡蛋做你的菜，别人做别人的。你们共享同一个菜谱，但是各有各的鸡蛋和西红柿、做出自己的那一盘菜。
 
 其实我们前面已经很多次使用作为原型的方法了。比如`defineOwnProperty()`这个方法就是定义在 `Object` 对象的原型上的，并且可以被任何从`Object`继承而来的对象共享和使用。我们用代码来看一下更清楚
 
@@ -1373,11 +1395,11 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 * book2 的定义更清楚地让我们看到一个普通对象的构建函数就是 `Object()`，而 book1 的定义方法只是`new Object(...)`构建函数更常见的写法而已。
 * 因为 book1 和 book2 都是从 `Object()` 构建出来的，所以它们共享 `Object.prototype`提供的方法（hasOwnProperty），不需要每个对象自己存储一遍。
 
-上面的例子和解释已经说明，像`hasOwnProperty`这种原型成员（ prototype property）就是我们需要的同一类对象共享的方法，它的行为跟 C++ 类的方法基本是一样的。**而原型（prototype）也是一个对象，它的成员就是所有的原型成员。**也可以说，原型这个对象就是为了容纳原型成员而存在的。既然原型是个对象，它里面当然既可以有函数成员，也可以有其它数据成员。但是既然面向对象的原理就是要求“数据独立、方法共享”，显然原型里主要应该是方法来。如果你一定放数据成员在里面，你要非常小心：任何一个使用它的对象都可能把共享的数值改变了（除非你把它的 writable 设为 false）而影响其它对象。
+上面的例子和解释已经说明，像`hasOwnProperty`这种原型成员（ prototype property）就是我们需要的同一类对象共享的方法，它的行为跟 C++ 类的方法基本是一样的。**而原型（prototype）也是一个对象，它的成员就是所有的原型成员。**也可以说，原型这个对象就是为了容纳原型成员而存在的。既然原型是个对象，它里面当然既可以有函数成员，也可以有其它数据成员。但是既然面向对象的原理就是要求“数据独立、方法共享”，显然原型里主要应该是方法了。如果你一定放数据成员在里面，你要非常小心：任何一个使用它的对象都可能把共享的数值改变了（除非你把它的 writable 设为 false）而影响其它对象。
 
 因为这是 JavaScript 面向对象编程里非常重要的概念，我希望大家一定要理解清楚。所以我们回忆一下以前讲过的内容，换个角度再理一遍。
 
-每个对象的成员都分为两类：自有成员（ own property ）和原型成员（ prototype property ）。一个对象是否有某个成员可以用操作符`in`来检查；此成员是否为自有成员可以用方法`hasOwnProperty`来检查；但是 JavaScript 里没有一个方法来检查一个成员是不是一个对象的原型成员。因为我们知道一个成员如果不是自有成员就一定是原型成员，所以我们可以容易地自己写这样一个函数：
+每个对象的成员都分为两类：自有成员（ own property ）和原型成员（ prototype property ）。一个对象是否有某个成员可以用操作符`in`来检查；此成员是否为自有成员可以用方法`hasOwnProperty`来检查；但是 JavaScript 里没有一个方法来检查一个成员是不是一个对象的原型成员。因为对象的任何一个成员如果不是自有成员就一定是原型成员，所以我们可以容易地自己写这样一个函数：
 
 ```
 	// 接上面的代码
@@ -1411,8 +1433,7 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 ```
 
 ### 原型方法的重载
-我们已经知道原型对象里的方法（也就是函数类型的原型成员）是被多个对象共享使用的。如果其中一个对象需要定义同名方法来实现自己的与众不同的行为，也是允许的。比如
-
+我们已经知道，一个构建函数创建的所有对象共享此构建函数的原型方法。但是如果其中一个对象需要定义同名方法来实现自己的与众不同的行为，也是允许的。比如
 
 ```
 	// 接上面的代码
@@ -1466,12 +1487,11 @@ JavaScript 提供的密封对象和读取其密封状态的方法名字直截了
 	
 	// 确认一下 sayName() 真的是原型成员
 	console.log(p1.hasOwnProperty("sayName"));	// false; 不是自有成员，必定是原型成员
-
 ```
 简单来说，在你自己的构建函数里添加原型成员分三步：
 
-1. 声明构建函数（并且把其创建对象需要的自有成员定义在函数体内部，比如上面的 `this.name`）。JavaScript 会自动给这个构建函数添加一个叫做 "prototype" 的对象
-2. 给上面那个 "prototype" 对象（而不是构建函数本身）添加你需要的方法，也就是 `Person.prototype.sayName = function() {...}` 这一步。这句赋值语句跟其它对象添加成员没任何区别。
+1. 声明构建函数，并且把其创建对象需要的自有成员定义在函数体内部，比如上面的 `this.name`。JavaScript 会自动给这个构建函数添加一个叫做 "prototype" 的对象
+2. 给上面那个 "prototype" 对象（而不是构建函数本身）添加你需要的方法，也就是 `Person.prototype.sayName = function() {...}` 这一步。这条赋值语句跟其它对象添加成员没任何区别。
 3. 用 "new" 关键字创建新的对象，这些新的对象自然就可以使用构建函数的所有自有成员和原型成员了。
 
 以上的第二步虽然并不一定非要在声明构建函数之后立刻执行，我还是建议你尽量这样做。否则不仅你自己代码的可读性会变得很差，而且构建出来的对象在什么时候可以使用哪些原型方法也很头疼。偶尔你会见到有人喜欢把别人定义好的构建函数上添加方法，比如
@@ -1507,13 +1527,24 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	console.log(p2.schools);	// ["铁岭一小", "沈阳二校"]
 ```
 
-`city` 因为是个基础数据类型，所以每个对象的数据结构里存的就是自己得到的赋值。而`schools`是引用数据类型，p1、p2 的数据结构里存的是指向同一个数组的指针。所以你增减 p1 的 schools，p2 的也跟着变了；反之亦然。解决方法是在 Person 的函数体内部增加类似的语句： `this.schools = [];`。
+`city` 因为是个基础数据类型，所以每个对象的数据结构里存的就是自己得到的赋值。而`schools`是引用数据类型，p1、p2 的数据结构里存的是指向同一个数组的指针。所以你增减 p1 的 schools，p2 的也跟着变了；反之亦然。解决方法是把这些不要共享的成员都挪到 Person 的函数体内部： 
+
+
+```
+	function Person(name) {
+		this.name = name;
+		this.city = "";
+		this.schools = [];
+	}
+	
+	// 接原型方法的定义...
+```
 ###  定义构建函数的原型
 我们在定义自己的构建函数的时候，它需要的原型方法往往有很多个。我们当然可以像之前的例子里`Person.prototype.sayName = function() {...}`那样一个一个添加。但是我们也可以把所有要定义的原型成员放到一个对象里一下子赋值给构建函数的原型。比如
 
 ```
 	function Person(name) {
-		this.name = name;	// 唯一的自有成员被赋予输入参数的值
+		this.name = name;
 	}
 	
 	Person.prototype = {
@@ -1526,7 +1557,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 		}
 	} 
 ```
-这样的写法要求你把所有的原型成员都放在一起，这往往是个好习惯。但是上面的代码有一段隐藏的问题：每个对象被建立的时候，JavaScript 都悄悄地给它内建了一个 "constructor" 成员。构建函数的原型对象的 constructor 原本是指向这个构建函数的。在上面对 Person.prototype 赋值语句里，我们不是给已有的 Person.prototype 添加方法，而是把它指向一个全新的对象，也就是等号右边这个对象——因为这个新的对象就是个普通的对象，它的 constructor 被指向了 `Object`。这样会导致一些混乱，比如
+这样的写法要求你把所有的原型成员都放在一起，这往往是个好习惯。但是上面的代码有一个隐藏的问题：每个对象被建立的时候，JavaScript 都悄悄地给它内建了一个 "constructor" 成员。构建函数的原型对象的 constructor 原本是指向这个构建函数的。在上面对 Person.prototype 赋值语句里，我们不是给已有的 Person.prototype 添加方法，而是把它指向一个全新的对象，也就是等号右边这个对象——因为这个新的对象就是个普通的对象，它的 constructor 被指向了 `Object`。这样会导致一些混乱，比如
 
 ```
 	// 接上面的代码
@@ -1542,10 +1573,9 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 
 解决的方法也不难，直接在给 Person.prototype 赋值的对象里把 constructor 设定好（通常是放在第一句，这样就不容易忘了）：
 
-
 ```
 	function Person(name) {
-		this.name = name;	// 唯一的自有成员被赋予输入参数的值
+		this.name = name;
 	}
 	
 	Person.prototype = {
@@ -1566,16 +1596,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	console.log(p1.toString());	// [Person Jack]
 	console.log(p1.constructor === Person);	// true；一切正常
 ```
-
-趁这个机会，我们把构建函数、其原型和其构建的对象的是如何联系在一起的理一理。这三个对象，套到上边的代码里分别是 Person, Person.prototype, 和 p1。它们之间是靠每个对象的 [[Prototype]]、constructor、或 prototype 这三个成员成员关联起来的：
-
-* Person 的 prototype 成员指向 Person.prototype 对象
-* Person.prototype 的 constructor 成员指向 Person
-* p1 的 [[Prototype]] 内部成员指向 Person.prototype；p1 的 constructor 成员指向 Person
-
-弄清楚了这些关系，我们在设计构建函数及其原型，以及使用构建函数的时候就要时时提醒自己，这些联系是不能打乱的。否则出了 bug 很难查。
-
-最后提醒一下，上面代码这样对构建函数的原型赋值之后，如果需要，还是可以随时加减原型成员的。比如
+对上面代码这样对构建函数的原型赋值之后，如果需要，还是可以随时加减原型成员的。比如
 
 ```
 	// 接上面的代码
@@ -1585,10 +1606,19 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	
 	p1.sayHi("Jenny");	// Hi Jenny, my name is Jack
 ```
-### 标准内建对象的原型
-所有 JavaScript 标准的内建对象都自带很多方法一方便我们使用（没有这些方法，那标准对象也没存在的意义了）。我们前面已经提到，这些方法基本都是原型方法。而且我们还给 String 添加了一个 double 原型方法。这样的行为在其它语言里几乎都是不允许的，所以对很多读者来说还比较陌生。下面咱们再看一个例子。
+### 构建函数、原型和对象的联系
+借上面的例子，我们理一理构建函数、其原型和其构建的对象这三者是如何联系在一起的。这三个对象，套到上边的代码里分别是 Person, Person.prototype, 和 p1。它们之间是靠每个对象的 [[Prototype]]、constructor、或 prototype 这三个成员关联起来的：
 
-数组 Array 也是我们常用的标准对象。当然它也提供了很多现成的方法。但是对数组的操作可以是无穷无尽的，这些方法不可能全部支持。比如你的程序在处理数组类型的数据时（假设都是数值），需要经常计算所有成员的平均值，那你就可以定义这样一个方法，然后很方便的调用
+* Person 的 prototype 成员指向 Person.prototype 对象
+* Person.prototype 的 constructor 成员指向 Person
+* p1 的 [[Prototype]] 内部成员指向 Person.prototype；p1 的 constructor 成员指向 Person
+
+弄清楚了这些关系，我们在设计构建函数及其原型，以及使用构建函数的时候就要时时提醒自己，这些联系是不能打乱的。否则出了 bug 很难查。
+
+### 标准内建对象的原型
+所有 JavaScript 标准的内建对象都自带很多方法以方便我们使用（没有这些方法，那标准对象也没存在的意义了）。我们前面已经提到，这些方法基本都是原型方法。而且我们还给 String 添加了一个 double 原型方法。这样的行为在其它语言里几乎都是不允许的，所以对很多读者来说还比较陌生。下面咱们再看一个例子。
+
+数组 Array 也是我们常用的标准对象。当然它也提供了很多现成的方法。但是对数组的操作可以说是无穷无尽的，语言自带的方法不可能全部支持。比如你的程序在处理数组类型的数据时（假设都是数值），需要经常计算所有成员的平均值，那你就可以定义这样一个方法，然后很方便的调用
 
 ```
 	if (!("average" in Array.prototype)) {	// 先确认一下没有这个原型方法
@@ -1607,19 +1637,19 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	let arr0 = [];
 	console.log(arr0.average());	// NaN
 ```
-⚠️再强调一遍：给标准对象添加原型方法可以谨慎地使用，而覆盖一个已有的原型方法是非常危险的！
+⚠️再强调一遍：给标准对象添加原型方法可以谨慎地使用，但是覆盖一个已有的原型方法是非常危险的！
 # 6. 继承（Inheritance）
 弄懂了原型，我们才能做好准备学习面向对象编程的另一个重要概念：继承。传统面向对象语言的继承是靠“子类继承父类”实现的。JavaScript 的类是个比较新的概念，是我们下一章的内容。在没有类的情况下 JavaScript 是如何实现继承的呢？靠的就是我们上一章讲的原型。
 ## 原型链（ Prototype Chaining ）
-首先我们回顾一下上一章用过的简单例子
+首先我们回顾一下上一章用过的简单例子和概念
 
 ```
 	function Person(name) {
-		this.name = name;	// 唯一的自有成员被赋予输入参数的值
+		this.name = name;
 	}
 	
 	Person.prototype = {
-		constructor: Person,	// 首先设定 constructor
+		constructor: Person,
 		
 		sayName: function() {
 			console.log(`My name is ${this.name}`);
@@ -1634,7 +1664,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	
 	p1.sayName();		// My name is Jack
 ```
-注意看最后一句：p1 并没有自有的方法叫做 "sayName"。当我们调用这个方法的时候，JavaScript 引擎先在自有方法里找，没有找到，它就自动去 p1 的内部成员`[[Prototype]]`所指的那个对象去找；而这个对象就是 Person.prototype，它恰好有个方法叫做 "sayName"。JavaScript 引擎就把这个方法拿过来用了。其实这个过程不就是对象方法的继承吗？在 C++ 里，如果子类里找不到一个方法，它父类里的方法就会被调用，它们的继承靠的是父类-子类的定义。在JavaScript 里，靠的是原型的链接。这种链接机制被叫做“原型链”（ Prototype Chaining ），也被叫做“原型继承”（ Prototype Inheritance ）。
+注意看最后一句：p1 并没有自有的方法叫做 "sayName"。当我们调用这个方法的时候，JavaScript 引擎先在自有方法里找，没有找到，它就自动去 p1 的内部成员`[[Prototype]]`所指的那个对象去找；而这个对象就是 Person.prototype，它恰好有个方法叫做 "sayName"。JavaScript 引擎就把这个方法拿过来用了。其实这个过程不就是对象方法的继承吗？在 C++ 里，如果子类里找不到一个方法，它父类里的方法就会被找到和调用，它们的这种继承关系靠的是父类-子类的定义。在JavaScript 里，靠的是原型的链接。这种链接机制被叫做“原型链”（ Prototype Chaining ），也被叫做“原型继承”（ Prototype Inheritance ）。
 ## Object.prototype
 既然讲原型链，那就让我们从这条链的起头开始。我们知道绝大多数对象都是从标准对象`Object`继承而来的，换句话说它们可以使用`Object`的原型方法。比如
 
@@ -1655,18 +1685,18 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 * **hasOwnProperty()**：已经见过的，检查一个成员是不是对象的自有成员
 * **propertyIsEnumerable()**：检查一个自有成员是不是可以枚举的（它的`[[Enumerable]]`内部特性是否为 true）
 * **isPrototypeOf()**：判断此对象是否为另一个对象的原型
-* **valueOf()**：返回此对象的基础数据类型。这个方法听上去很奇怪，你也不需要使用；它主要是给 JavaScript 引擎自用的
+* **valueOf()**：返回此对象的基础数据类型的值。这个方法听上去很多余，你也不需要使用；它主要是给 JavaScript 引擎自用的
 * **toString()**：见过很多次了，返回代表此对象的一个字符串
 
 这些方法既然是原型方法，当然就是可以被其它对象继承和使用的，类似于这样：`myObj.toString()`。
 
-`Object`还有很多方法不是原型方法，比如我们之前使用过的`defineProperty()`、`getPrototypeOf()`、`freeze()`等等。这些方法直接定义在`Object`上，而不是`Object.prototype`上，所以它们不会被其它对象继承。使用它们的时候必须带`Object.`前缀，比如`Object.freeze(myObj)`。
+⚠️ `Object`还有很多方法不是原型方法，比如我们之前使用过的`defineProperty()`、`getPrototypeOf()`、`freeze()`等等。这些方法直接定义在`Object`上，而不是`Object.prototype`上，所以它们不会被其它对象继承。使用它们的时候必须带`Object.`前缀，比如`Object.freeze(myObj)`。
 ## 对象继承
 我们在本章第一节里已经讲了，继承的关键是建起来原型链，让“子对象”的`[[Prototype]]`指向被继承的父对象。通常有两种方法建立这种原型链；本节介绍第一个，对象继承（ Object Inheritance ）；下一节介绍另一种，构建函数继承（ Constructor Inheritance ）。
 
-对象继承的概念很简单：你已经有了一个对象（我们暂且称之为父对象），它有一些有用的成员（方法）；现在你想建一个新的对象（叫它子对象），并且希望子对象可以继承过来父对象的方法重用。换句话说，这是**从对象到对象的继承**。
+对象继承的概念很简单：首先你已经有了一个对象（我们暂且称之为父对象），它有一些有用的成员（方法）；现在你想建一个新的对象（叫它子对象），并且希望子对象可以继承过来父对象的方法重用。换句话说，这是**从对象到对象的继承**。
 
-如果你以为以前从来没这么做过，其实不对——你每次定义一个普通的对象的时候，JavaScript 都帮你做了这件事。JavaScript 做这件事使用的方法也是我们以前见过但是还不熟悉的：`Object.create()`。首先你应该注意到它不是个原型方法，所以你必须带着`Object.`来调用它。从名字就可以看出来它是用来创建一个对象的（也就是子对象）。它只需要两个输入参数：第一个是新对象的原型，也就是父对象；第二个可选，是子对象成员的 property descriptors (我们在讲解成员特性的章节用到过)。
+如果你以为以前从来没见过这样做的例子，其实是因为这件事是悄悄地发生的——你每次定义一个普通的对象的时候，JavaScript 都帮你做了这件事。JavaScript 做这件事使用的方法也是我们以前见过但是还不熟悉的：`Object.create()`。首先你应该注意到它不是个原型方法，所以你必须带着`Object.`来调用它。从名字就可以看出来它是用来创建一个对象的（也就是子对象）。它只需要两个输入参数：第一个是新对象的原型，也就是父对象；第二个可选，是子对象成员的 property descriptors (我们在讲解成员特性的章节用到过)。
 
 我们通过代码来看看
 
@@ -1676,7 +1706,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 		title: "Good Parts"
 	}
 	
-	// 等同于以下代码
+	// JavaScipt 引擎悄悄地把它翻译成等同于以下的代码
 	let book = Object.create(Object.prototype, {
 		title: {
 			configurable: true,
@@ -1716,9 +1746,9 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	  	}
 	});
 	
-	console.log(objChild.getName());	// 子对象可以使用父对象的方法
-	console.log(objChild.age);		// 也可以使用自有成员
-	console.log(objChild.toString());		// [object Object]
+	console.log(objChild.getName());	// my name is Kid; 子对象可以使用父对象的方法
+	console.log(objChild.age);		// 11; 也可以使用自有成员
+	console.log(objChild.toString());	// [object Object]
 	
 	console.log(objParent.hasOwnProperty("getName"));	// true
 	console.log(objChild.hasOwnProperty("getName"));	// false
@@ -1763,9 +1793,9 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	console.log(typeof f.prototype);	// object
 ```
 
-这个缺省的 prototype 对象从 Object.prototype 继承而来；它里面只有一个成员 "constructor" 指向 prototype 对象所在的函数本身。读者应该还记得，在上一章里，我们就是在这个 prototype 对象里添加方法，作为构建函数创建出来的对象所能继承的原型方法。
+这个缺省的 prototype 对象从 Object.prototype 继承而来；它里面只有一个自有成员 "constructor" 指向 prototype 对象所在的函数本身。读者应该还记得，在上一章里，我们就是在这个 prototype 对象里添加方法，作为构建函数创建出来的对象所能继承的原型方法。
 
-如果我们想把一个构建函数继承另外一个函数，其实方法很简单：把“子构建函数”的 prototype 指向“父构建函数”构建的对象，这样就形成了原型链。下面我们来看个具体的例子
+如果我们想让一个构建函数继承另外一个函数，其实方法很简单：把“子构建函数”的 prototype 指向“父构建函数”构建的一个对象，这样就形成了原型链。下面我们来看个具体的例子
 
 ```
 	// Rectangle 是个普通的构建函数
@@ -1783,7 +1813,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 		return `Rectangle: ${this.length} x ${this.width}`;
 	}
 	
-	// Square 是一种特殊的 Rectangle。它会继承自 Rectangle 
+	// Square 是一种特殊的 Rectangle，它需要继承自 Rectangle 
 	function Square(length) {
 		this.length = length;
 		this.width = length;	// Rectangle 需要两个自有成员，否则 getArea() 就无法使用了
@@ -1818,15 +1848,15 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 上面的代码很清楚，但我们还是把要点理一下：
 
 * 既然要继承，首先要把被继承的父构建函数定义好（我们前面说过，它的所有原型方法定义最好紧跟着函数定义）
-* 然后定义子构建函数。注意在此函数内部，父构建函数需要的自有成员通常都要定义，否则以后调用父构建函数的原型方法的时候可能用到这些成员（就像 getArea() 需要 length 和 width）就会出错
+* 然后定义子构建函数。注意在此函数内部，父构建函数需要的自有成员通常都要定义，否则以后调用父构建函数的原型方法的时候，用到这些成员（就像 getArea() 需要 length 和 width）就会出错
 * 最关键的一步：把子构建函数（ Square ）的 prototype 指向一个用父构建函数（ Rectangle ）创建的对象（⚠️而不是父构建函数本身）。这是因为这个新创建的对象的内部成员`[[Prototype]]`指向 Rectangle.prototype 对象，这样就形成了原型链。
 * 经常忽略的一步是把子构建函数的 prototype 对象的 constructor 改回到子构建函数本身（上一句执行完，这个 constructor 显然是指向父构建函数的）
 * 最后，你可以在子构建函数的 prototype 上定义新的原型方法，也可以定义同名的方法覆盖父构建函数的原型方法
 
-以上模式建好之后，从 Square 创建的对象（ square ）在调用一个方法的时候，就会沿着 “自有方法-> Square的原型方法 -> Rectangle的原型方法 -> Object的原型方法” 这个次序依次寻找同名的函数使用。在这个次序的背后，就是原型链。下面的代码也许能帮你更直观地理解这条链：
+以上模式建好之后，从 Square 创建的对象（ square ）在调用一个方法的时候，就会沿着 “自有方法-> Square的原型方法 -> Rectangle的原型方法 -> Object的原型方法” 这个次序依次寻找同名的函数使用。驱动这个调用次序的，就是原型链。下面的代码也许能帮你更直观地理解这条链：
 
 ```
-	// 接上面的代码，以下所有结果皆为 true
+	// 接上面的代码；以下所有语句的结果皆为 true
 	console.log(square.__proto__ === Square.prototype);
 	console.log(square.__proto__.__proto__ === Rectangle.prototype);
 	console.log(square.__proto__.__proto__.__proto__ === Object.prototype);
@@ -1847,7 +1877,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 ```
 这样的代码稍微复杂一些，但是执行的时候更简洁，最重要的是会避免由于没有输入参数而导致的构建函数出错，或者浪费无用对象的大块内存。
 ### 调用父构建函数
-到目前为止，我们基本上已经实现了传统面向对象语言所提过的继承机制。但是在 JavaScript 的构建函数里没有类似于`super`这样的对象指向父构建函数。如果在子构建函数里我们希望调用父构建函数或者它的原型方法，怎么做呢？
+到目前为止，我们基本上已经实现了传统面向对象语言所提供的继承机制。但是在 JavaScript 的构建函数里没有类似于`super`这样的对象指向父构建函数。如果在子构建函数里我们希望调用父构建函数或者它的原型方法，怎么做呢？
 
 回想我们对函数的了解，其实不论任何函数，除了调用时处理参数不一样，还有一个关键就是当时调用它的对象、也就是`this`不一样，决定了它不一样的行为。而我们是可以通过`apply()`和`call()`这两个方法改变函数的`this`的。
 
@@ -1890,7 +1920,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 	console.log(square.getArea());	// 81
 	console.log(square.toString());	// Square with border of 9
 ```
-以上代码关键的一句是`Rectangle.call(this, length, length);`。如果你还记得`call()`的用法，这句话并不复杂。在这条语句的位置，`this`当然就是 Square 所创建的对象；我们通过`call`把它设成 Rectangle() 运行时的 this。在下面我们创建对象的时候（`var square = new Square(9);`），会在 Square() 内部调用到这条语句，看上去是类似于这个样子
+以上代码关键的一句是`Rectangle.call(this, length, length);`。如果你还记得`call()`的用法，这句话并不复杂。在这条语句的位置，`this`就是 Square 所创建的对象（在使用了关键字`new`的条件下）。我们通过`call`把它设成 Rectangle() 运行时的 this。在下面我们创建对象的时候（`var square = new Square(9);`），会在 Square() 内部调用到这条语句，看上去是类似于这个样子
 
 ```
 	Rectangle.call(square, 9, 9);
@@ -1943,7 +1973,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 所以结论是即便没有`super`，JavaScript 也允许我们相当容易地得到使用`super`的效果。
 
 # 7. 类（Class）
-跟很多程序员一样，我刚开始接触 JavaScript 的时候一直有这样的疑问：居然没有“类”这么核心的概念，JavaScript 还能算是面向对象的语言吗？大概 TC39 听到了群众的呼声，终于在 ES6 里增加了类（ Class ）。但是这个类并不是多么革命性的变化，反而更是语法上的美化。其实这也不奇怪，因为毕竟在没有类的日子里，我们也已经可以实现绝大多数面向对象的功能了。即便如此，我们还是应该熟练掌握这个新的类，不仅仅是因为它会让我们的代码更清晰、更简洁、更少出错，而且也有越来越多的第三方库是用类提供的。
+跟很多程序员一样，我刚开始接触 JavaScript 的时候一直有这样的疑问：居然没有“类”这么核心的概念，JavaScript 还能算是面向对象的语言吗？大概 TC39 听到了群众的呼声，终于在 ES6 里增加了类（ Class ）。但是这个类并不是多么革命性的变化，而仅仅是语法上的美化。其实这也不奇怪，因为毕竟在没有类的日子里，我们也已经可以实现绝大多数面向对象的功能了。即便如此，我们还是应该熟练掌握这个新的类：不仅仅是因为它会让我们的代码更清晰、更简洁、更少出错，而且也有越来越多的第三方库是用类提供的。
 ## 类定义的声明
 第一个定义类的方法是声明一个类，它的样子跟声明一个对象非常类似，但是它使用关键字`class`开头，内部定义一组方法，其中第一个一般都是`constructor()`；每个方法的定义都不需要关键字`function`，方法与方法之间也不需要逗号分隔。比如我们定义一个简单的类
 
@@ -1972,7 +2002,7 @@ JavaScript 的新手请非常谨慎地使用这招，尤其是要先检查构建
 ```
 上面的代码里，我们首先用关键字`class`声明我们要定义的类，Person。Person 后面跟着花括弧，花括弧里就是这个类的所有方法了。
 
-第一个方法`constructor`的名字是关键字；它的作用类似 C++ 的 constructor——你应该在这里完成新建一个对象的所有初始化工作。但是在这之前，**你还应该声明所有的自有对象**（相当于 C++ 里定义 data member）。这不仅仅是因为在 JavaScript 的类里没有单独的地方声明自有成员，而且把这些自有成员的定义放在一起也大大提高了代码的可读性。当你在后面的代码里`new`一个对象的时候（比如`let jack = new Person("Jack");`），这个 `constructor()` 方法总会被执行，它的输入参数就是你传给类的输入参数（ "Jack" ）。
+第一个方法`constructor`的名字是关键字；它的作用类似 C++ 的 constructor——你应该在这里完成新建一个对象的所有初始化工作。但是在这之前，**你还应该在 constructor 里声明所有的自有对象**（相当于 C++ 里定义 data member）。这不仅仅是因为在 JavaScript 的类里没有单独的地方声明自有成员，而且把这些自有成员的定义集中放在一起也大大提高了代码的可读性。当你在后面的代码里`new`一个对象的时候（比如`let jack = new Person("Jack");`），这个 `constructor()` 方法总会被执行，它的输入参数就是你传给类的输入参数（ "Jack" ）。
 
 类里面的其它方法看上去跟函数没什么不一样，并且上面的最后两句代码揭示了很有意思的事实：
 
@@ -2084,7 +2114,7 @@ Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知�
 在实际工作中，这个办法可以被用来封装一组相关的方法，就像 Math 一样。比如你制作了一组处理自然语言的方法，你就可以把它们封装在一个叫做 “NaturalLang” 的对象里给别人使用。
 
 ## 在类里定义 accessor property
-我们前面已经说过，对象的自有成员都应该在类的 constructor 里定义好。但是如果你真的有需要使用 accessor property，也是可以的：
+我们前面已经说过，对象的自有成员都应该在类的 constructor 里定义好。但是如果你有需要使用 accessor property，也是可以的：
 
 ```
 	class Person {
@@ -2187,7 +2217,7 @@ Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知�
 	Person.timerStop();	// Person Timer: 2.1669921875ms; 停止计时并输出时长
 ```
 
-在代码里，我建议你把所有静态函数都写在紧跟 constructor 之后，或者都写在原型方法之后、类定义结束之前。这样这两类方法可以更清楚地区分开。
+在代码里，我建议你把所有静态函数都写在紧跟 constructor 之后，或者都写在原型方法之后、类定义结束之前。如此一来这两类方法可以更清楚地区分开。
 
 ## 类的继承
 作为“美化版的构建函数”，类当然也支持继承，并且继承的语法更简单、直观。ES6 里跟定义`class`关键字一起，还定义了两个关键字用来支持类的继承：`extends`和`super`。它们让 JavaScript 类的继承语法很类似于传统面向对象的语言了。
@@ -2315,7 +2345,7 @@ Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知�
 		}
 	}
 	
-	Student.timerStart();
+	Student.timerStart();	// 子类调用父类的静态方法
 	
 	let jack = new Student("Jack", 128924);
 	jack.getName();	// My name is Jack
@@ -2352,7 +2382,7 @@ Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知�
 	console.log(sq7 instanceof Rectangle);	// true
 ```
 
-`extends`关键词后面甚至可以跟一个变量。比如上面的代码可以改为
+`extends`关键词后面甚至可以跟一个表达式。比如上面的代码可以改为
 
 ```
 	// 假设这是一个已有的构建函数
@@ -2381,7 +2411,7 @@ Singleton 是一种比较特殊的面向对象编程方法（恕我实在不知�
 	console.log(sq7.getArea());	// 49
 	console.log(sq7 instanceof Rectangle);	// true
 ```
-当然`extends`也不是什么对象都可以跟的，还有一些限制。目前你只要记住应该放父类或者构造函数就够了。
+当然`extends`后面也不是什么对象都可以跟的，还有一些限制。目前你只要记住应该放父类或者构造函数就够了。
 ### 混合继承
 “混合继承”这个词是我无奈之下发明的，因为它的英文是 "mixin"。在其它面向对象语言里，它通常被叫做多重继承，也就是一个子类从多于一个父类里继承。这样的做法其实是把好几个父类的方法混合在一起都传承给子类，所以叫做 mixin 也有道理。
 
@@ -2487,13 +2517,13 @@ JavaScript 并不直接支持混合继承，也就是说你不能在`extends`后
 	
 	let shape1 = new _AbsShape();	// TypeError: _AbsShape cannot be used to instantiated directly.
 ```
-在上面代码里，虽然我们希望 \_AbsShape 是个抽象类，但是因为没有任何语法的限制，`let shape1 = new _AbsShape();`这条语句是可以比顺利执行的。但是我们在抽象的基类 \_AbsShape 的 constructor 里判断了它是否被直接调用，如果是就抛出错误，达到了抽象类的效果。而它的子类的对象初始化（`let circle5 = new Circle(5);`）就没有问题。
+在上面代码里，虽然我们希望 \_AbsShape 是个抽象类，但是因为没有任何语法的限制，`let shape1 = new _AbsShape();`这条语句是可以顺利执行的。但是我们在抽象的基类 \_AbsShape 的 constructor 里判断了它是否被直接调用，如果是就抛出错误，达到了抽象类的效果。而它的子类的对象初始化（`let circle5 = new Circle(5);`）就没有问题。
 
 # 8. Proxy
-首先说明一下，本章的内容比较新，也比较抽象，算是本书的“进阶课题”吧。如果你是 JavaScript 初学者，也许你可以在第一遍阅读此书的时候跳过这一章。 、Proxy 和 Reflection API 被加入 ES6 的本意并不一定是更好地支持面向对象编程，但是客观上它们达到了这个效果。所以我还是把它们加入此书。如果你从来没有在别人的代码里见到过使用它们，你可以小心地尝试成为你们团队里第一个吃螃蟹的人。
+首先说明一下，本章的内容比较新，也比较抽象，算是本书的“进阶课题”吧。如果你是 JavaScript 初学者，也许你可以在第一遍阅读此书的时候跳过这一章。 Proxy 和 Reflection API 被加入 ES6 的本意并不一定是更好地支持面向对象编程，但是客观上它们达到了这个效果。所以我还是把它们加入此书。如果你从来没有在别人的代码里见到过使用它们，你可以小心地尝试成为你们团队里第一个吃螃蟹的人。
 ## Proxy，Trap，和 Reflect 的概念
 ### Proxy
-有网络基础知识的读者对 Proxy 这个词大概不陌生，中文叫做“代理”。在网络上它被假设在客户端和服务器之间，客户端发给服务器的数据包都会被它首先收到。Proxy 可以检查这些数据包、改变其内容、拒绝它、或者更多地把它转交给服务器。
+有网络基础知识的读者对 Proxy 这个单词大概不陌生，中文叫做“代理”。在网络上它被架设在客户端和服务器之间，客户端发给服务器的数据包都会被它首先收到。Proxy 可以检查这些数据包、改变其内容、拒绝它、或者把它转交给服务器。
 
 JavaScript 的 Proxy 当然不是个网络设备，但是它的作用跟网络代理差不多：它本身是一个对象，架设在另一个对象（叫做目标对象，target）和使用目标对象的代码之间。它可以介入目标对象是如何被使用的；换句话说，**你对目标对象的某些特定操作要先从 Proxy 过一道手**。如果这样说还是抽象，我们来看个具体的例子
 
@@ -2517,14 +2547,14 @@ JavaScript 的 Proxy 当然不是个网络设备，但是它的作用跟网络�
 ```
 在这段代码里，我们使用`let proxy = new Proxy(target, {});`构建了一个代理 target 对象的 proxy。Proxy() 调用的第一个参数就是这个 target；第二个参数现在是个对象，我们叫它 handler（顾名思义它就是用来实现代理的那些功能的）。现在 handler 是空的，可以想象这个 proxy 什么都没做。或者更确切地说，它做的唯一一件事就是把你的操作原原本本地传给 target。所以下面我们给  proxy 定义新成员并赋值，其实是 target 得到了这个成员；我们从 proxy 取值，proxy 也把 target 的成员值原封不动地返还给我们。
 ### Trap 和 Reflect
-这样的 proxy 当然还没什么用。关键是我们还没给 handler 里加东西。handler 是个对象，它的成员必须是一组事先被 JavaScript 语言定义好的方法中的若干个。这样的方法被称作 **Trap** 。每个方法对应一种 JavaScript 语言对目标对象的一种底层操作——这些底层操作原本只在 JavaScript 引擎内部使用，ES6 把它们提供出来是希望让 JavaScript 更灵活、更强大。
+这样的 proxy 当然还没什么用。关键是我们还没给 handler 里加东西。handler 是个对象，它的成员必须是一组事先被 JavaScript 语言定义好的方法中的若干个。这样的方法被称作 **Trap** 。每个方法对应一种 JavaScript 语言对目标对象的底层操作。这些底层操作原本只在 JavaScript 引擎内部使用，ES6 把它们公开出来是希望让 JavaScript 更灵活、更强大。
 
 全部 Trap（或者说 handler 支持的全部方法）的列表可以在 [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler) 上找到。我们在本章遇到几个常用的也会加以讲解。⚠️ Trap 的目的并不是要改变你给对象定义的那些方法的行为——那种改变应该通过类的继承和方法的覆盖完成。Trap 里的方法都是原本 JavaScript 引擎对对象本身的操作。
 
-Reflect 是 JavaScript 语言定义的另一个标准内建对象。它的任务是为上面列表中的每个 Trap 提供缺省的行为。所以它的成员是跟 Trap 同名的一组方法。它的使用不需要新建对象，直接调用`Reflect.method()`就可以，跟我们使用`Math`对象是一样的。最常见的使用方法是在一个 Trap 里先完成我们需要完成的任务（比如过滤输入值），然后调用同名的 Reflect 方法（把过滤过的数值传送给目标对象）。下面咱们来看几个有实际意义的例子。
+Reflect 是 JavaScript 语言定义的另一个标准内建对象。它的任务是为上面列表中的每个 Trap 提供缺省的行为。所以它的成员是跟 Trap 同名的一组方法，通常参数也是一样的。它的使用不需要新建对象，直接调用`Reflect.method()`就可以，跟我们使用`Math`对象是一样的。最常见的使用方法是在一个 Trap 里先完成我们需要完成的任务（比如过滤输入值），然后调用同名的 Reflect 方法把过滤过的数值传送给目标对象。下面咱们来看几个有实际意义的例子。
 ## Proxy的使用举例
 ### 使用`set`过滤新的对象成员
-我们知道可以随时给对象添加新的成员，而且新成员的命名（只要是字符串）、赋值都是没有限制的。这种灵活性有的时候太宽松了。比如我们有一个对象里放的是一些商品品和它们对应的价格，这时候我们希望新添加的成员（产品）的赋值（价格）只能是数字。以前我们是没办法在添加对象成员的时候做这种限制的。阅读 MDN 的文档可知，Proxy handler 里有一个[`set`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/set)方法，它恰好是对象成员赋值的 trap。（⚠️ 不要把这个`set`和我们以前见过的其它`set`混淆）它接受四个输入参数：
+我们知道可以随时给对象添加新的成员，而且新成员的命名（只要是字符串或者 symbol ）、赋值都是没有限制的。这种灵活性有的时候太宽松了。比如我们有一个对象里放的是一系列食品名和它们对应的价格，这时候我们希望新添加的成员（食品）的赋值（价格）只能是数字。以前我们是没办法在添加对象成员的时候做这种限制的。阅读 MDN 的文档可知，Proxy handler 里有一个[`set`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/set)方法，它恰好是对象成员赋值的 trap。（⚠️ 不要把这个`set`和我们以前见过的其它`set`混淆）它接受四个输入参数：
 
 * `target`：目标对象
 * `property`：对象成员的 key
@@ -2542,8 +2572,9 @@ Reflect 是 JavaScript 语言定义的另一个标准内建对象。它的任务
 	// 再定义 proxy
 	let foodPrice = new Proxy(priceTarget, {
 		
-		// 在 handler 里实现一个 trap -- set
+		// 在 handler 里实现一个 trap : set
 		set(target, key, value, receiver) {
+		
 			// 如果是目标对象已有的成员，则不做检查
 			if (!target.hasOwnProperty(key)) {
 				if (isNaN(value)) {	// 如果输入的 value 不是数字则报错
@@ -2556,7 +2587,7 @@ Reflect 是 JavaScript 语言定义的另一个标准内建对象。它的任务
 		}
 	});
 	
-	// 给 foodPrice(priceTarget) 添加一个“合法”的成员
+	// 给 foodPrice（priceTarget) 添加一个“合法”的成员
 	foodPrice.egg = 2.5;
 	console.log(foodPrice["egg"]);	// 2.5
 	console.log(priceTarget["egg"]);	// 2.5
@@ -2569,14 +2600,14 @@ Reflect 是 JavaScript 语言定义的另一个标准内建对象。它的任务
 	// 给 foodPrice(priceTarget) 添加一个“非法”的成员
 	foodPrice.milk = "expensive";	// TypeError: Price must be a number
 ```
-以上代码中，我们的 proxy 被命名为 foodPrice（我个人不喜欢在此变量名里一定加上"proxy"，我更希望使用者把这个 proxy 当作一个正常的对象使用，至于它是如何做赋值检查的，那是应该被封装的对象内部逻辑）。在`let foodPrice = new Proxy(priceTarget, {`这行之后的嵌套有四层，大家要看仔细了：
+以上代码中，我们的 proxy 被命名为 foodPrice（我个人不喜欢在此变量名里一定加上"proxy"，我更鼓励使用者把这个 proxy 当作一个正常的对象使用，至于它是如何做赋值检查的，那是应该被封装的对象内部逻辑）。在`let foodPrice = new Proxy(priceTarget, {`这行之后的嵌套有四层，大家要看仔细了：
 
 1. 第一层是为了定义 handler 对象，里面只有一个方法 set
 2. 第二层是 set 的函数内容
 3. 第三层的 `if` 是先检查一下 key：如果是给目标对象已有的成员赋值则跳过下一层
 4. 第四层才是我们需要的检查赋值是否为数字`if (isNaN(value)) {`。如果不是就报错；如果是就调用 Reflect 里同名的方法，“原来该怎么办还怎么办”。
 
-这个例子很典型地演示了如何**不通过继承而改变对象的某些行为**。
+这个例子很典型地演示了如何不通过继承而改变对象的某些行为。
 ### 使用`get`检查对象的 key
 JavaScript 有一个常为人诟病的问题：你如果试图读取一个对象并不存在的成员，比如
 
@@ -2588,7 +2619,7 @@ JavaScript 有一个常为人诟病的问题：你如果试图读取一个对象
 	console.log(obj.value);	// undefined
 	console.log(obj.name);	// undefined
 ```
-大多数其它语言在执行第二句 `console.log()`时会出错，因为它试图读取一个不存在的变量。而在 JavaScript 里，最后两条语句的返回没有任何区别。这显然不太合理，但是让 JavaScript 在新版本里突然把这个 bug 改了也很难，不知道有多少老代码会突然死掉。
+大多数其它语言在执行第二句 `console.log(obj.name);`时会出错，因为它试图读取一个不存在的变量。而在 JavaScript 里，最后两条语句的返回没有任何区别。这显然不太合理，但是让 JavaScript 在新版本里一下子把这个 bug 改了也很难，不知道有多少老代码会突然死掉。
 
 如果我们希望自己新定义的对象达到其它语言那样对未定义成员报错的效果，可以使用 Proxy 的[`get`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/get)这个 handler。顾名思义，`get`在每次读取对象成员的值时都会被调用。`get`有三个输入参数：target，property，和 receiver。它们的含义跟在`set`里是一样的。注意`get`不需要输入 value，因为它本身就是要返回 value。
 
@@ -2669,14 +2700,15 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 假设没有上一句，或者它抛出的 TypeError 被 catch 住了，下面一句`delete circle.radius;`就会被执行。这一句会触发另一个 trap `deleteProperty(target, key) {...}`。在这个函数里，我们先把所有不可删除的成员的键值放到一个`Set`里，这样以后可以很容易地扩展需要保护的成员列表。然后我们在`Set`对象里搜索输入的 key，如果找到了也抛出错误。
 
 ### 使用`ownKeys`Trap 隐藏对象成员
-我们知道 JavaScript 的对象没有所谓私有成员，而且在第四章我们还学习过一个方法`Object.keys()`可以枚举所有自有的、内部特性`[[Enumerable]]`为 true 的对象成员。如果你做好了一个对象给别人使用，但是其中有些成员其实是给对象内部使用的，哪怕你没有在文档是提及这些“内部成员”，别人还是可以用`Object.keys()`或者类似的方法发现它们。除了用`Object.defineProperty`一一把这些成员的`[[Enumerable]]`设为 false 之外，我们还有一个叫做[`ownKeys`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/ownKeys)的 trap 可以用。
+我们知道 JavaScript 的对象没有所谓私有成员，而且在第四章我们还学习过一个方法`Object.keys()`可以枚举所有自有的、`[[Enumerable]]`特性为 true 的对象成员。如果你做好了一个对象提供给别人，但是其中有些成员其实是给对象内部使用的，哪怕你没有在文档是提及这些“内部成员”，别人还是可以用`Object.keys()`或者类似的方法发现它们。除了用`Object.defineProperty`一一把这些成员的`[[Enumerable]]`设为 false 之外，我们还有一个叫做[`ownKeys`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/ownKeys)的 trap 可以用。
 
-`ownKeys`会在程序调用以下四个`Object`的方法时被触发：
+`ownKeys`会在程序调用以下五个`Object`的方法时被触发：
 
 * `Object.keys()`
 * `Object.getOwnPropertyNames()`：这个功能跟`keys()`非常类似
 * `Object.getOwnPropertySymbols()`：这个用于成员的 key 是 symbol 的时候（Symbol 以后放到 ES6 的书中再说）
 * `Object.assign()`：因为`assign()`要把一个对象的全部自有成员拷贝到另一个对象上，所以它需要枚举第一个对象的所有自有成员的键值
+* 在`for (key in object) { ... }`循环里
 
 `ownKeys()`的输入只有一个，就是目标对象。`ownKeys`的返回值必须是一个数组，数组的内容就是你希望目标对象可以被枚举的那些键值。如果你不想对这些键值做任何过滤，你也可以直接返回`Reflect.ownKeys(target)`。
 
@@ -2716,7 +2748,7 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 	console.log(keys.length);	// 2
 	console.log(keys);	// [ 'name', 'grade' ]
 ```
-跟使用`Object.defineProperty`把每一个下划线开头的成员的`[[Enumerable]]`特性设为 false 相比，这个办法显然更简洁、更有扩展性。如果你在目标对象里新增一个这样的对象，只要命名时加上下划线前缀就好了。
+跟使用`Object.defineProperty`把每一个下划线开头的成员的`[[Enumerable]]`特性设为 false 相比，这个办法显然更简洁、更有扩展性。如果你想在目标对象里新增一个不可以被枚举的对象，只要命名时加上下划线前缀就好了。
 
 但是需要指出的是，以上的方法只是“半隐藏”对象的成员。下划线开头的成员虽然不能被枚举，但是还是可以被读写的：
 
@@ -2740,14 +2772,14 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 
 1. target：目标函数
 2. argumentsList：输入参数（数组）
-3. `newTarget`：我们以前讲到构造函数时用过的`new.target`变量
+3. newTarget：我们以前讲到构造函数时用过的`new.target`变量
 
 最后一个参数对`Reflect.construct()`是可选项。
 
 下面我们先看一个不是构建函数的例子
 
 ```
-	// 以下函数把它的所有输入参数相加；如果每个参数都是数值则求算术和；
+	// 函数 sum 把它的所有输入参数相加；如果每个参数都是数值则求算术和；
 	// 如果遇到一个字符串则从那个字符串开始变为字符串相连
 	function sum (...args) {
 		return args.reduce((previous, current) => previous + current, 0);
@@ -2757,21 +2789,22 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 	console.log(sum(1, 2, '3'));	// '33'
 	
 	// 构建一个 proxy；它只允许输入任意个数值，并且用上面的函数进行算术求和
-	// 并且，这不是一个构建函数，不可以使用"new"
+	// 并且，因为这不是一个构建函数，不允许使用"new"
 	let sumNumber = new Proxy(sum, {
 		
+		// 在没有 “new” 调用的时候
 		apply(target, thisArg, argumentList) {
-			argumentList.forEach( arg => {	// 正常调用时检查每个输入参数
+			argumentList.forEach( arg => {	// 检查每个输入参数的类型
 				if (typeof arg !== "number") {
 					throw new TypeError(`\"${arg}\" is not a number`);
 				}
 			});
 			
-			// 如果都是数值则调用目标函数进行计算
+			// 如果没有出错则调用目标函数进行计算
 			return Reflect.apply(target, thisArg, argumentList);
 		},
 		
-		// 如果调用此 proxy 带“new”则报错
+		// 如果调用带 “new” 则报错
 		construct(target, argumentList, newTarget) {
 			throw new TypeError("This function can't be called with new.");
 		}
@@ -2785,7 +2818,7 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 ```
 上面例子的效果有点像是个“函数的继承”：我们从一个通用的“sum”生成一个只针对数值的“sum”。这样的“继承”也可以用在类的定义上。
 ### 类的 Proxy
-我们已经讲过，JavaScript 的类本质就是个构建函数，不过被进行了一些特殊处理使其更适合用于创建对象。这些特殊处理里最明显的一个就是你必须使用`new`来调用它，否则出错。这个行为的实现很类似于我们在上一节的举例里的`construct` trap，只不过是同样的语句换到了`apply()`里。因为 Proxy 提供的是一些 JavaScript 更内部的方法，它允许我们处理没有`new`而调用类的情况。跟其它函数一样，没有`new`的调用触发的是`apply()`这个 trap。（可以想象，其对应的 Reflect.apply() 就会抛出错误。）下面我们看看怎么在具体代码里使用类的 Proxy。
+我们已经讲过，JavaScript 的类本质就是个构建函数，不过被进行了一些特殊处理使其更适合用于创建对象。这些特殊处理里最明显的一个就是你必须使用`new`来调用它，否则出错。这个行为的实现很类似于我们在上一节的举例里的`construct` trap，只不过是同样的语句换到了`apply()`里。因为 Proxy 提供的是一些 JavaScript 更内部的方法，它允许我们处理没有`new`而调用类的情况。跟其它函数一样，没有`new`的调用一个类会触发`apply()`这个 trap。（可以想象，其对应的 Reflect.apply() 逻辑必定是抛出错误。）下面我们看看怎么在具体代码里使用类的 Proxy。
 
 假设已经有一个类 Person，生成的对象有两个成员：name 和 birthYear。现在我们要构造这个类的 Proxy，用来生成退休老人的对象，其出生年份必须在60年前（小于1957）。另外，如果调用这个 Proxy 的代码忘记使用`new`，我们也给返回同样的对象（因为既然已经是调用类，当然就是要返回对象）。
 
@@ -2822,15 +2855,15 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 	});
 	
 	// Retired 可以当作一个新的类来使用
-	let retired = Retired("老张", 1955);	// 没问题
-	let zhang = new Person("小张", 1995);	// 没问题
+	let retired = Retired("老张", 1955);	// 没问题，返回一个对象
+	let zhang = new Person("小张", 1995);	// 没问题，因为 Person.constructor() 不限年龄
 	let young = Retired("小张", 1995);	// TypeError: birthYear must be before 1957
 ```
 我们可以看到，除了对忘记`new`的调用更友善之外，上面的代码还从通用的 Person 类“继承”为一个更特殊的“退休人员”类。当然这不是真正的继承，但是如果你希望对处理的数据有所限制的时候，这种方法还是很好用的。
 # 9. 编程攻略
 本书前面所举的很多例子，虽然短小，但是作者力图做到有实用价值。很多对象的构造方法，改一下变量名、增加对象的成员和方法，希望就可以用到你的代码里。在这一章里，我们不再讲解新的语言概念，而是重点介绍几个用 JavaScript 进行面向对象编程的攻略。
 ## 对象成员的封装
-前面已经提到过，JavaScript 面向对象编程最为人诟病的大概就是没有`private`关键字，对象的成员不容易轻易隐藏。但是这个问题并不是完全无解的。
+前面已经提到过，JavaScript 面向对象编程最为人诟病的大概就是没有`private`关键字，对象的成员不能轻易隐藏。但是这个问题并不是完全无解的。
 ### 利用 IIFE 封装对象的私有成员
 IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常用的技巧，往往被用来执行一段一次性的逻辑。因为 IIFE 里的匿名函数的变量仅存在于它自己的函数范围命名空间内，我们可以把需要隐藏的变量放在此匿名函数内部，而把对象的公共成员从这个返回，看上去就是这样：
 
@@ -2843,7 +2876,7 @@ IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常
 		};
 	}());
 ```
-在上面的伪码中，匿名函数返回的对象会赋值给 myObj，当然里面的对象都是 myObj 可以读写的。而 `return`语句之前定义的函数内部变量，显然是在函数外部无法获取的，当然也不是 myObj 的成员。关键在于，这些**内部变量是可以被`return`语句返回的方法读写的，所以它们的效果等同于对象的私有成员**。
+在上面的伪码中，匿名函数返回的对象会赋值给 myObj，当然里面的对象都是 myObj 可以读写的。而 `return`语句之前定义的函数内部变量，显然是在匿名函数外部无法获取的，当然也不是 myObj 的成员。关键在于，这些**内部变量是可以被`return`语句返回的对象里的方法读写，所以它们的效果等同于对象的私有成员**。
 
 来看个以前用过的例子：架设我们要构建一个 person 对象。他的名字是可以改的，但是他的出生年份不可以改，而他的年龄是当前年份减去出生年份。当前年份也不可以直接读写，但是可以通过方法递增。
 
@@ -3000,16 +3033,16 @@ IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常
 
 在这个例子里我们使用了一个 IIFE。它的匿名函数里定义了以下内容：
 
-* 本地变量 currentYear ：因为匿名函数只被调用了一次，所以这个变量在内存里只有一份；换句话说，它是被下面构建函数生成的所有对象共享的
+* 本地变量 currentYear ：因为匿名函数只被调用了一次，所以这个变量在内存里只有一份；换句话说，它是被下面构建函数生成的所有对象共享的，效果相当于“静态成员”
 * 构建函数 _Person ：这是我们最后要返回的结果，里面定义了一个普通成员 name 和一个只读成员 birthYear
-* 构建函数的普通方法 _Person.older() ：联想我们在构建函数章节讲到的，这样定义的方法就是静态方法
-* 构建函数的原型方法 _Person.prototype.getAge() ：它的计算需要用到对象的自有成员 birthYear 和静态成员 currentYear
+* 构建函数的静态方法 _Person.older() 
+* 构建函数的原型方法 _Person.prototype.getAge() ：它的计算需要用到对象的自有成员 birthYear 和“静态成员” currentYear
 
 使用这个 IIFE 生成的构建函数，我们可以创建两个对象 p1 和 p2。试图通过 p1 去修改 birthYear 或者 currentYear 都是无效的，只有通过静态方法 `Person.older();`才可以递增 currentYear，从而递增所有 p1 和 p2 的 getAge() 返回值。
 
-⚠️ 上面代码有个小问题：因为每个对象的 birthYear 是不能共享的，而且我们在原型方法 getAge() 里需要用到这个变量，所以我们必须把它设为只读成员。如果你要求这个成员完全不可以通过对象直接读写，那上面的代码还是不够完美。说到底，JavaScript 还是没有一种机制让对象的某个成员允许由其方法读写，而不能由使用对象的代码直接读写。
+⚠️ 上面代码有个小问题：因为每个对象的 birthYear 是不能共享的，而且我们在原型方法 getAge() 里需要用到这个变量，所以我们必须把它设为只读成员。如果你要求这个成员完全不可以通过对象直接读写，那上面的代码还是不够完美。说到底，JavaScript 还是没有一种机制让对象的某个成员只允许由其方法读写，而不能由使用对象的代码直接读写。
 
-## Mixins
+## Mixin
 不同于构建函数或者类的继承， mixin 的目的是把其它对象（我们称之为供应对象 supplier）的成员借用过来，加在我们需要使用的对象（称之为接收对象 receiver ）上，但是不改变接收对象的原型。它不是 JavaScript 正规定义的一个功能，也有人对它有争议，比如 React 的开发者就认为[它是有害的](https://reactjs.org/blog/2016/07/13/mixins-considered-harmful.html)，并且要[彻底弃用它](https://medium.com/@dan_abramov/mixins-are-dead-long-live-higher-order-components-94a0d2f9e750)。但是毕竟还是有很多人在使用它，它已经存在于大量的代码里。不论你是否直接使用它，间接上你很难避免遇到它，比如在第三方的库里。我们在这里不想争论它的优劣，只想讲清楚它是怎么工作的，由读者自行判断在你的代码里如何使用。
 
 我们前面已经见过通过调用`Object.assign()`方法的 mixin 例子，这里再看另一个途径。先定义一个用于 mixin 的函数
@@ -3026,9 +3059,9 @@ IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常
 	}
 ```
 
-这个函数有两个输入参数，分别是 receiver 和 supplier 这两个对象。它的内部逻辑很简单：枚举 supplier 的所有自有成员，如果 receiver 里没有这个成员（如果你希望用 supplier 的同名成员覆盖它，就不做这个判断），就把它拷贝到 receiver 上。这个拷贝是 shallow copy，也就是说如果拷贝的是 supplier 的一个对象成员，那并没有在 receiver 里创建一个新对象，而是在原有对象上新加了一个指针。咱们把这个函数放到一个具体的例子里来看看。
+这个函数有两个输入参数，分别是 receiver 和 supplier 这两个对象。它的内部逻辑很简单：遍历 supplier 的所有自有成员，如果 receiver 里没有这个成员（如果你希望用 supplier 的同名成员覆盖它，就不做这个判断），就把它拷贝到 receiver 上。⚠️ 这个拷贝是 shallow copy，也就是说如果拷贝的是 supplier 的一个对象成员，那并没有在 receiver 里创建一个新对象，而是在原有对象上新加了一个指针。
 
-假设你做了一个名为 Circle 的构建函数，它生成的对象有两个自有成员 radius 和 color，和一个原型方法 sayName()。使用一段时间后你需要给它添加计算面积和周长的方法。这时你发现别人已经写好了一个有这种运算功能的构建函数 CalcCircleArea。当然我们要尽量重用已有的代码，下面的代码让你可以“借用”你需要的方法：
+咱们把这个函数放到一个具体的例子里来看看。假设你做了一个名为 Circle 的构建函数，它生成的对象有两个自有成员 radius 和 color，和一个原型方法 sayName()。使用一段时间后你需要给它添加计算面积和周长的方法。这时你发现别人已经写好了一个有这种运算功能的构建函数 CalcCircleArea。当然我们要尽量重用已有的代码，下面的代码让你可以“借用”你需要的方法：
 
 ```
 	// 我们的 mixin 函数
@@ -3134,7 +3167,7 @@ IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常
     cc2.sayName();	// My radius is 5 and my color is green
     console.log(cc2.getArea());	// TypeError: cc2.getArea is not a function
 ```
-这段代码的 mixin() 函数和两个构建函数都跟前一段完全相同。但是我们在 mixin() 的参数上稍加调整，就可以实现不一样的目的。因为我们并没有改造 ColorCircle 这个构建函数，它创建出来的其它对象（ cc2 ）不可以使用新的方法。
+这段代码的 mixin() 函数和两个构建函数都跟前一段完全相同。但是我们在 mixin() 的参数上稍加调整，就可以实现不一样的目的。因为我们并没有改造 ColorCircle 这个构建函数，它创建出来的其它对象（ cc2 ）当然也不可以使用新的方法。
 
 ## Scope-Safe 构建函数
 我们在前面章节已经讲过构建函数如果被不带`new`前缀调用时候的一些问题，以及如何用`new.target`来判断是否有`new`前缀。这一节我们再拓展一下这个话题，并且演示另一个解决问题的方法。先看下面最简单的例子
@@ -3156,14 +3189,14 @@ IIFE（ Immediately-Invoked Function Expression）在 JavaScript 里是一个常
 ```
 这段代码显示，当程序运行在非 strict 模式下的时候，`var p1 = Person("Mary");`这条语句因为忘记了`new`，函数内部的`this`指向了全局，结果把全局变量 name 给改变了。这是非常危险的，也是很难发现的 bug 。
 
-这个问题的解决办法就是如果构建函数发现没有`new`，我们在代码里帮它加上。而如果正常使用了`new`，那么在构造函数内部运行的时候，`this`指向的当然就是要创建出来的对象了。我们可以利用这个特点把上面的代码改进如下
+这个问题的解决办法就是如果构建函数发现没有`new`，我们在代码里帮它加上。而如果正常使用了`new`，在构造函数内部运行的时候，`this`指向的就是要创建出来的对象。我们可以利用这个特点把上面的代码改进如下
 
 ```
 var name = "Jack";
 
 function Person(name) {
   if (this instanceof Person){	// 效果等同于 if (new.target === Person){
-  	this.name = name;	// 给对象负债
+  	this.name = name;	// 给对象赋值
   } else {
   	return new Person(name);	// 否则调用自己创建对象
   }	
