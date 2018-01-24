@@ -182,7 +182,7 @@
         'name': '老王',
         'age': 35,
         'relationship': '邻居'
-    }
+    };
 ```
 
 或者先定义一个空的对象，再给它的成员赋值：
@@ -227,7 +227,7 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
     let person = {
         name: "Obama",
         job: "retired"
-    }
+    };
 
     let name = person.name;
 ```
@@ -256,7 +256,7 @@ JavaScript对每个标准对象都提供了相应的自带方法，可以简化�
         name: "Josh",
         dept: "Math",
         advisor: "Prof. Obama"
-    }
+    };
     delete person2.advisor;
 ```
  
@@ -439,14 +439,14 @@ JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占�
 	var obj1 = {
   		x : 0,
   		value : function() {
-    		console.log(this.x);
+    		        console.log(this.x);
   		}
 	}
 
 	var obj2 =  {
   		x : 0,
   		value : () => {
-    		console.log(this.x);
+    		        console.log(this.x);
   		}
 	}
 
@@ -466,7 +466,6 @@ JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占�
       let this.fileReady;
       fs.access(filename, (err) => {
         this.fileReady = err ？false : true;      // 不论何处被调用，这个this永远指向CheckMyFile
-        }
       });
     }
 
@@ -474,8 +473,7 @@ JavaScript是自带垃圾回收的，所以通常你并不需要考虑内存占�
     function CheckMyFile(filename) {
       let this.fileReady;
       fs.access(filename, function (err) {
-        this.fileReady = err ? false :true;
-        }
+        this.fileReady = err ? false : true;
       }.bind(this))；      // 很多人常常忘了 .bind(this) 而在运行时出错——更麻烦的是运行时不报错！
     };
 ```
@@ -532,7 +530,7 @@ ES6 还引入了一种新的特殊函数，generator，用 `function*`来定义�
 
 ```
     function doubleAndCallback(value, callback) {
-      console.log('Input value is', value);
+      console.log('Input value is: ', value);
       callback(value * 2);
     }
 
@@ -735,13 +733,14 @@ JavaScript 提供这样一个对象的目的很明确：如果你的函数需要
 ```
     let myCalc = {
       base: 0,
-
       sum: function(first, second) {
         return this.base + first + second;
       }
     }
 
-    let n1 = { base: 10 }, n2 = { base: 100 };
+    let n1 = { base: 10 }, 
+      n2 = { base: 100 };
+      
     let inputs = [2, 3];
 
     console.log(myCalc.sum(2, 3));              // 5
@@ -759,12 +758,11 @@ JavaScript 提供这样一个对象的目的很明确：如果你的函数需要
 
 ```
     // 接上面的代码
-    myCalc.timeout = function(sec) {
-        setTimeout(function(){
-          console.log("Timeout!", this.base);
-        },
-        sec * 1000);
-      }
+    myCalc.timeout = function (sec) {
+      setTimeout(function () {
+        console.log("Timeout!", this.base);
+      }, sec * 1000);
+    }
 
     myCalc.timeout(2);                  // 2秒之后： Timeout! undefined
 ```
@@ -772,12 +770,11 @@ JavaScript 提供这样一个对象的目的很明确：如果你的函数需要
 
 ```
     // 上面那段代码修改之后
-    myCalc.timeout = function(sec) {
-        setTimeout(function(){
-          console.log("Timeout!", this.base);
-        }.bind(this),       // 加上bind，生成了一个新的回调函数
-        sec * 1000);
-      }
+    myCalc.timeout = function (sec) {
+      setTimeout(function () {
+	console.log("Timeout!", this.base);
+      }.bind(this), sec * 1000);      // 加上bind，生成了一个新的回调函数
+    }
 
     myCalc.timeout(2);                  // 2秒之后： Timeout! 0
 ```
@@ -822,7 +819,7 @@ n1Plus1000 是一个对 myCalc.sum 用`bind`绑定了两个参数而生成的新
 
 ```
     var person1 = {
-    	name: "老张"
+      name: "老张"
     };
     var person2 = new Object();
     person2.name = "老李";
@@ -867,7 +864,7 @@ person1 和 person2 都是对象、都有 name 和 age 的成员（或者叫特�
 ```
     var person1 = {
     	name: "老张",
-    	getName: function() {
+    	getName: function () {
     		return this.name;
     	}
     };
@@ -1029,9 +1026,10 @@ person1 和 person2 都是对象、都有 name 和 age 的成员（或者叫特�
 
 1. 此成员是否可以用操作符`delete`删除
 2. 此成员的除了`value`之外的三个特性是否可以被从`false`改成`true`。这句话内容很丰富，我们把它再拆成三种情况：
-	1. `value`是否可以赋值永远由`writable`的真伪决定
-	2. `configurable`一旦设为`false`就再也没法改为`true`了
-	3. `enumerable`和`writable`，在`configurable`为`false`的情况下可以由`true`改为`false`，但是不能由`false`改为`true`
+
+	* `value`是否可以赋值永远由`writable`的真伪决定
+	* `configurable`一旦设为`false`就再也没法改为`true`了
+	* `enumerable`和`writable`，在`configurable`为`false`的情况下可以由`true`改为`false`，但是不能由`false`改为`true`
 
 如果这样的解释太烧脑，你可以这样理解：`configurable`设为`false`是件“开弓没有回头箭”的事，而且这个`{configurable: false}`把`enumerable`和`writable`这两个本来“开弓还有回头箭”的特性也变成了“开弓没有回头箭”。如果你还是晕，我实在想不出来更通俗易懂的解释了，但是下面的代码应该会有帮助。
 
@@ -2735,19 +2733,19 @@ JavaScript 除了可以随时增添对象的成员，也可以随时使用`delet
 	let circleTarget = {
 		radius: 0,
 		Pi: 3.1415926,
-    	getArea() {
-    		return Math.pow(this.radius, 2) * this.Pi;
-    	}
+		getArea() {
+			return Math.pow(this.radius, 2) * this.Pi;
+ 		}
 	};
 	
 	let circle = new Proxy(circleTarget, {
 		// 使用 set trap 防止常量 Pi 被赋值
 		set(target, key, value, receiver) {
-    		if (key === "Pi") {
-      			throw TypeError("Pi cannot be changed");
-      		} else {
-      			Reflect.set(target, key, value, receiver);
-      		}
+			if (key === "Pi") {
+				throw TypeError("Pi cannot be changed");
+			} else {
+				Reflect.set(target, key, value, receiver);
+			}
 		},
     
     	// 使用 deleteProperty trap 避免 Pi 或者 radius 被删除
